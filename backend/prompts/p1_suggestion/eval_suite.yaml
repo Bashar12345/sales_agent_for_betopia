@@ -1,0 +1,56 @@
+# eval_suite.yaml — P1 suggestion quality evaluation
+# Run with: pytest tests/evals/p1/ -v
+
+version: "1.0"
+pipeline: "p1"
+task: "eval"
+
+metrics:
+  - name: "strategy_diversity"
+    description: "All 5 suggestions must use different strategies"
+    threshold: 1.0   # 100% of responses must pass
+
+  - name: "preview_length"
+    description: "preview_text <= 120 characters"
+    threshold: 1.0
+
+  - name: "conversion_signal_range"
+    description: "All conversion_signal values in [0.0, 1.0]"
+    threshold: 1.0
+
+  - name: "selection_rate_by_strategy"
+    description: "Tracks which strategy is actually selected by salespeople"
+    threshold: null  # observational only — used for prompt tuning
+
+  - name: "tone_validation_pass_rate"
+    description: "% of suggestions that pass vLLM tone validation"
+    threshold: 0.95
+
+test_cases:
+  - id: "tc_001"
+    intent: "new_inquiry"
+    customer_message: "Hi, I need a website for my restaurant. Budget is around $500."
+    expected_strategies_present:
+      - "discovery"
+      - "value_proposition"
+
+  - id: "tc_002"
+    intent: "negotiation"
+    customer_message: "Your price is too high. Can you do it for $200?"
+    expected_strategies_present:
+      - "negotiation"
+      - "value_proposition"
+
+  - id: "tc_003"
+    intent: "angry"
+    customer_message: "You never responded to my last message! This is unacceptable!"
+    expected_tones_present:
+      - "empathetic"
+    must_not_include_tone: "assertive"
+
+  - id: "tc_004"
+    intent: "urgent"
+    customer_message: "I need this done by Friday. Can you commit?"
+    expected_strategies_present:
+      - "urgency"
+      - "discovery"

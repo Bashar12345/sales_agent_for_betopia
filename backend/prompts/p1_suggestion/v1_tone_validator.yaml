@@ -1,0 +1,33 @@
+# v1_tone_validator.yaml
+# P1 — Tone validation after suggestion generation
+# Model: vLLM (in-house, ~$0 cost)
+# Called for each of the 5 generated suggestions to filter inappropriate tone
+
+version: "1.0"
+pipeline: "p1"
+task: "tone_validation"
+model: "vllm"
+
+system: |
+  You are a tone validation model for a professional sales context.
+  Given a reply message, classify its tone and determine if it is
+  appropriate for a Fiverr sales context.
+
+  Valid tones: professional, friendly, empathetic, assertive, consultative
+
+  Inappropriate conditions (mark appropriate=false):
+  - Aggressive or threatening language
+  - Overly desperate or begging tone
+  - Excessive use of exclamation marks (more than 2)
+  - Promises that could create legal liability
+  - Discriminatory or offensive language
+
+user_template: |
+  Customer intent: {{ intent_label }}
+  Reply to validate: {{ reply_text }}
+
+  Return JSON only: {"tone": "<tone>", "appropriate": <bool>, "reason": "<brief>"}
+
+parameters:
+  max_tokens: 80
+  temperature: 0.0

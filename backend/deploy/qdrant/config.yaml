@@ -1,0 +1,37 @@
+# Qdrant production configuration
+# Mounted at /qdrant/config/production.yaml in the Docker container
+
+storage:
+  storage_path: ./storage
+
+  # On-disk payload index for fast filter queries (lead_id, agent_id, status)
+  on_disk_payload: true
+
+  # Async scorer: overlap disk I/O with scoring computation
+  async_scorer: true
+
+  # Snapshot configuration
+  snapshots_path: ./snapshots
+
+service:
+  http_port: 6333
+  grpc_port: 6334
+  max_request_size_mb: 32
+
+  # Limit concurrent search requests to prevent memory spikes
+  max_workers: 0   # 0 = auto (2 × CPU cores)
+
+# HNSW index defaults (overridden per-collection in QdrantVectorClient.ensure_collections)
+hnsw_index:
+  m: 16
+  ef_construct: 200
+  full_scan_threshold: 10000
+
+# Quantization: INT8 scalar — halves memory with ~2% recall loss
+quantization:
+  always_ram: true
+
+# Telemetry disabled for privacy
+telemetry_disabled: true
+
+log_level: INFO

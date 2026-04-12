@@ -1,0 +1,55 @@
+# v1_extraction_prompt.yaml
+# P2 Requirements Agent — multi-modal document extraction
+# Model: gpt-4.1 (structured outputs + Vision for images/screenshots)
+
+version: "1.0"
+pipeline: "p2"
+task: "requirements_extraction"
+model: "gpt-4.1"
+output_schema: "shared/output_schemas/requirements_v1.json"
+
+supported_input_types:
+  - mime: "application/pdf"
+    parser: "pdfplumber"
+    fallback_parser: "pymupdf"
+  - mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    parser: "python-docx"
+  - mime: "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    parser: "python-pptx"
+  - mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    parser: "openpyxl"
+  - mime: "image/png"
+    parser: "gpt-4.1-vision"
+  - mime: "image/jpeg"
+    parser: "gpt-4.1-vision"
+  - mime: "audio/mpeg"
+    parser: "whisper"
+  - mime: "text/plain"
+    parser: "raw"
+
+system: |
+  {{ shared/system_persona.yaml#persona }}
+
+  You are extracting structured project requirements from a client document.
+  Extract ALL mentioned requirements accurately — do not invent or embellish.
+  If a field cannot be determined, set it to null.
+  Rate your extraction_confidence honestly: 0.9+ only if the document is clear
+  and comprehensive; 0.5–0.7 for partial information; below 0.5 for very vague docs.
+
+user_template: |
+  Extract requirements from the following document content:
+
+  ## Document: {{ filename }}
+  ## Content:
+  {{ document_text }}
+
+  {% if conversation_context %}
+  ## Additional context from conversation:
+  {{ conversation_context }}
+  {% endif %}
+
+  Use the extract_requirements tool to return structured data.
+
+parameters:
+  max_tokens: 2048
+  temperature: 0.1   # Low temp for faithful extraction

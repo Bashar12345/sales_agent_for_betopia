@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "suggestion_list_v1",
+  "title": "SuggestionList",
+  "description": "Structured output schema for P1 Conversation Engine suggestion list",
+  "type": "object",
+  "required": ["suggestions"],
+  "properties": {
+    "suggestions": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["rank", "strategy", "tone", "preview_text", "full_text", "conversion_signal"],
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "1 = highest estimated conversion probability"
+          },
+          "strategy": {
+            "type": "string",
+            "enum": [
+              "discovery",
+              "value_proposition",
+              "social_proof",
+              "urgency",
+              "negotiation"
+            ]
+          },
+          "tone": {
+            "type": "string",
+            "enum": [
+              "professional",
+              "friendly",
+              "empathetic",
+              "assertive",
+              "consultative"
+            ]
+          },
+          "preview_text": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Short preview shown in UI card"
+          },
+          "full_text": {
+            "type": "string",
+            "description": "Complete reply text ready to send"
+          },
+          "conversion_signal": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "description": "Estimated probability of advancing the lead"
+          }
+        }
+      }
+    }
+  }
+}

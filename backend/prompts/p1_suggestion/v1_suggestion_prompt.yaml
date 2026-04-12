@@ -1,0 +1,54 @@
+# v1_suggestion_prompt.yaml
+# P1 Conversation Engine — suggestion generation prompt
+# Version: 1.0  |  Model: gpt-4.1 (primary), claude-sonnet-4-6 (fallback)
+
+version: "1.0"
+pipeline: "p1"
+task: "suggestion_generation"
+model_primary: "gpt-4.1"
+model_fallback: "claude-sonnet-4-6"
+output_schema: "shared/output_schemas/suggestion_list_v1.json"
+
+ab_variants:
+  - id: "v1_control"
+    weight: 0.7
+    description: "Standard 5-suggestion generation with strategy diversity"
+  - id: "v1_empathy_first"
+    weight: 0.3
+    description: "Lead with empathetic tone, then strategic variants"
+
+system: |
+  {{ shared/system_persona.yaml#persona }}
+
+  For this request:
+  - Customer's detected intent: {{ intent_label }}
+  - Generate exactly 5 reply suggestions ranked by conversion probability
+  - Each suggestion must use a DIFFERENT strategy from: discovery, value_proposition,
+    social_proof, urgency, negotiation
+  - Keep preview_text under 120 characters
+  - full_text should be a complete, ready-to-send message (max 200 words)
+  - conversion_signal: honest estimate 0.0–1.0 based on intent + context
+
+user_template: |
+  ## Recent conversation history:
+  {{ conversation_history }}
+
+  ## Customer's latest message:
+  {{ customer_message }}
+
+  {% if similar_conversations %}
+  ## Relevant past conversations (for reference style/tone):
+  {{ similar_conversations }}
+  {% endif %}
+
+  {% if service_context %}
+  ## Agency service portfolio context:
+  {{ service_context }}
+  {% endif %}
+
+  Generate 5 reply suggestions using the generate_suggestions tool.
+
+parameters:
+  max_tokens: 2048
+  temperature: 0.7
+  top_p: 0.95

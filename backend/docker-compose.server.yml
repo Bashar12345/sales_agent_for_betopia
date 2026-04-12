@@ -1,0 +1,158 @@
+version: "3.9"
+
+# Sales Intelligence Agent v3.0 — Full dev stack
+# PostgreSQL 17 + Qdrant 1.13 + NATS JetStream + Redis 7.4
+# Usage: docker compose -f docker-compose.server.yml up --build
+
+services:
+  # ── FastAPI Application ──────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./prompts:/app/prompts
+      - quotation_docs:/tmp/quotations
+      - proposal_docs:/tmp/proposals
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── Celery Worker ────────────────────────────────────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: deploy/docker/worker.Dockerfile
+    env_file: .env
+    depends_on:
+      - redis
+      - postgres
+      - qdrant
+      - nats
+    volumes:
+      - ./src:/app/src
+      - ./prompts:/app/prompts
+      - quotation_docs:/tmp/quotations
+      - proposal_docs:/tmp/proposals
+    command: celery -A src.workers.celery_app worker --loglevel=info --concurrency=4
+
+  # ── PostgreSQL 17 ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: betopia
+      POSTGRES_PASSWORD: betopia_secret
+      POSTGRES_DB: sales_agent
+      # Enable logical replication for Debezium CDC (future)
+      POSTGRES_INITDB_ARGS: "--wal-level=logical"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: >
+      postgres
+        -c wal_level=logical
+        -c max_replication_slots=4
+        -c max_wal_senders=4
+        -c shared_preload_libraries=pg_stat_statements
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U betopia -d sales_agent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Qdrant 1.13+ (Vector DB) ─────────────────────────────────────────────────
+  qdrant:
+    image: qdrant/qdrant:v1.13.0
+    ports:
+      - "6333:6333"    # HTTP REST + gRPC
+      - "6334:6334"    # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+      - ./deploy/qdrant/config.yaml:/qdrant/config/production.yaml
+    environment:
+      QDRANT__SERVICE__HTTP_PORT: 6333
+      QDRANT__SERVICE__GRPC_PORT: 6334
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── NATS JetStream (Event Bus) ────────────────────────────────────────────────
+  nats:
+    image: nats:2.10-alpine
+    ports:
+      - "4222:4222"    # Client connections
+      - "8222:8222"    # HTTP monitoring
+    command: ["-js", "-m", "8222", "--store_dir", "/data"]
+    volumes:
+      - nats_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis 7.4+ (Celery broker + suggestion/embedding cache) ──────────────────
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Prometheus ───────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - app
+
+  # ── Grafana ──────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  qdrant_data:
+  nats_data:
+  redis_data:
+  grafana_data:
+  quotation_docs:
+  proposal_docs:

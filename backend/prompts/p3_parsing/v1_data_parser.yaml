@@ -1,0 +1,34 @@
+# v1_data_parser.yaml
+# P3 Data Layer — Batch parsing for non-urgent structured data extraction
+# Uses OpenAI Batch API (50% cost reduction vs. real-time)
+# Triggered by: background Celery task, not the real-time request path
+
+version: "1.0"
+pipeline: "p3"
+task: "batch_data_parsing"
+model: "gpt-4.1"
+delivery: "batch"   # OpenAI Batch API — 24h max turnaround, 50% discount
+
+use_cases:
+  - "Bulk import of historical Fiverr conversation exports"
+  - "Retroactive requirements extraction from old quotation documents"
+  - "Pricing pattern analysis from accepted/rejected quotation history"
+  - "Lead scoring recalibration from completed project outcomes"
+
+system: |
+  You are a data parser extracting structured information from raw text.
+  Be precise and conservative — only extract what is explicitly stated.
+  For missing fields, use null.
+
+user_template: |
+  Parse the following {{ document_type }} and extract structured data.
+
+  ## Content:
+  {{ content }}
+
+  Return JSON matching the {{ schema_name }} schema.
+
+batch_config:
+  max_batch_size: 50000        # OpenAI Batch API limit
+  completion_window: "24h"
+  error_handling: "skip_and_log"   # Don't fail the batch on individual errors

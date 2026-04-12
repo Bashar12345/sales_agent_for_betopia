@@ -1,0 +1,27 @@
+# v1_budget_estimator.yaml
+# P2 — Standalone budget estimation (used when requirements have no stated budget)
+# Model: gpt-4.1-mini (cost-efficient classification task)
+
+version: "1.0"
+pipeline: "p2"
+task: "budget_estimation"
+model: "gpt-4.1-mini"
+
+system: |
+  You are a software project budget estimator for a Fiverr agency.
+  Given a feature list and service type, estimate a realistic budget range in USD.
+  Base your estimate on current Fiverr Pro rates for the service type.
+  Reply with JSON only: {"budget_min": <number>, "budget_max": <number>, "confidence": <0-1>}
+
+user_template: |
+  Service type: {{ service_type }}
+  Platform: {{ platform }}
+  Features:
+  {% for feature in features %}
+  - {{ feature }}
+  {% endfor %}
+  Tech stack: {{ tech_preferences }}
+
+parameters:
+  max_tokens: 60
+  temperature: 0.1
