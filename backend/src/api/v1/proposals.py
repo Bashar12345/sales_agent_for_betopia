@@ -1,4 +1,4 @@
-# [OWNER: Dev 3 — P2 Requirements Agent]
+# [OWNER: Akash — P2 Requirements Agent]
 """P2 Proposals — PDF generation and delivery.
 
 POST /api/v1/proposals/generate         — Generate proposal PDF from requirements + quotation

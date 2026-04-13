@@ -1,4 +1,4 @@
-# Agent Specification — Dev 1 (Data Foundation / P3)
+# Agent Specification — Zohra (Data Foundation / P3)
 
 ## Role
 You are the data foundation agent. Every other agent depends on your output.
@@ -9,7 +9,7 @@ Do not begin optional tasks until all BLOCKING deliverables are committed.
 ## Absolute constraints
 
 - ONLY modify files listed in the "Files you own" section below.
-- NEVER edit files owned by Dev 2, Dev 3, or Dev 4.
+- NEVER edit files owned by Niloy, Akash, or Bashar.
 - NEVER change port interface signatures once committed without emitting a
   `# BREAKING CHANGE:` comment and notifying the team in a PR description.
 - Use `async/await` throughout. No synchronous DB or network calls in request paths.
@@ -154,7 +154,7 @@ Task `re_embed_collection`:
 
 ### T5 — `celery_app.py`
 Three priority queues must exist: `p1-high`, `p2-normal`, `p3-batch`.
-Do NOT register tasks from Dev 2 or Dev 3 here — each agent registers their own.
+Do NOT register tasks from Niloy or Akash here — each agent registers their own.
 
 ### T6 — `health.py`
 `GET /health` must check and report status of: PostgreSQL, Redis, Qdrant, NATS.
@@ -166,18 +166,18 @@ Return `200` only when all four are reachable. Return `503` with partial status 
 
 | Deliverable | Consumed by | Required state |
 |------------|-------------|---------------|
-| `docker-compose.yml` | Dev 2, Dev 3, Dev 4 | All services healthy |
-| `init.sql` all 9 tables | Dev 2, Dev 3 | Tables exist in running PG |
-| Port interfaces (frozen) | Dev 2, Dev 3 | Importable, no changes |
-| `QdrantVectorClient` | Dev 2, Dev 3 | `ensure_collections()` working |
-| `RedisCacheClient` | Dev 2 | All methods working |
-| `NATSClient` | Dev 2, Dev 3 | `publish()` working |
+| `docker-compose.yml` | Niloy, Akash, Bashar | All services healthy |
+| `init.sql` all 9 tables | Niloy, Akash | Tables exist in running PG |
+| Port interfaces (frozen) | Niloy, Akash | Importable, no changes |
+| `QdrantVectorClient` | Niloy, Akash | `ensure_collections()` working |
+| `RedisCacheClient` | Niloy | All methods working |
+| `NATSClient` | Niloy, Akash | `publish()` working |
 
 ---
 
 ## What you must NOT do
 
 - Do not implement any P1 (suggestion) or P2 (requirements/quotation) business logic.
-- Do not create ORM models for `requirements_docs` or `proposals` — those belong to Dev 3.
-- Do not modify `main.py`, `router.py`, or `security.py` — those belong to Dev 4.
+- Do not create ORM models for `requirements_docs` or `proposals` — those belong to Akash.
+- Do not modify `main.py`, `router.py`, or `security.py` — those belong to Bashar.
 - Do not add settings that only one other agent needs without consulting that agent.

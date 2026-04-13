@@ -1,4 +1,4 @@
-# [OWNER: Dev 1 — Data Foundation (P3)]
+# [OWNER: Zohra — Data Foundation (P3)]
 """IEmbeddingPort — abstract interface for text embedding.
 
 Decoupled from ILLMPort so the embedding model can be swapped independently

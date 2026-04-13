@@ -1,4 +1,4 @@
-# [OWNER: Dev 3 — P2 Requirements Agent]
+# [OWNER: Akash — P2 Requirements Agent]
 """Quotation — a structured price estimate generated from a Conversation.
 
 In v3.0 this is the lightweight internal record; the customer-facing deliverable

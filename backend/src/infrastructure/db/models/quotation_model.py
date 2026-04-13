@@ -1,4 +1,4 @@
-# [OWNER: Dev 1 — Data Foundation (P3)]
+# [OWNER: Zohra — Data Foundation (P3)]
 """SQLAlchemy ORM model for Quotation — PostgreSQL 17.
 
 Line items are stored as JSONB for efficient partial-field querying.

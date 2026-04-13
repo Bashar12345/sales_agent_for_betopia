@@ -1,4 +1,4 @@
-# [OWNER: Dev 1 — Data Foundation (P3)]
+# [OWNER: Zohra — Data Foundation (P3)]
 """IEventBusPort — abstract interface for NATS JetStream publish / subscribe.
 
 CloudEvents 1.0 envelope is applied by the concrete implementation

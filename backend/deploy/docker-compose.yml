@@ -1,6 +1,6 @@
 # =============================================================================
 # Sales Intelligence Agent v3.0 — Local development stack
-# Owner: Dev 1 (Data Foundation)
+# Owner: Zohra (Data Foundation)
 #
 # Starts: PostgreSQL 17, Redis 7.4, Qdrant 1.13, NATS JetStream 2.10, MinIO
 #
@@ -69,12 +69,7 @@ services:
     image: nats:2.10-alpine
     container_name: betopia_nats
     restart: unless-stopped
-    command: >
-      -js
-      -m 8222
-      --store_dir /data
-      --max_mem 256mb
-      --max_file 4gb
+    command: "-js -m 8222 --store_dir /data"
     ports:
       - "4222:4222"   # client connections
       - "8222:8222"   # monitoring / HTTP

@@ -1,4 +1,4 @@
-# [OWNER: Dev 1 — Data Foundation (P3)]
+# [OWNER: Zohra — Data Foundation (P3)]
 """SQLAlchemy ORM model for SalesAgent — PostgreSQL 17."""
 
 import uuid

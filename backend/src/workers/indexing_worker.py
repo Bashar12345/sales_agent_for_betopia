@@ -1,4 +1,4 @@
-# [OWNER: Dev 1 — Data Foundation (P3)]
+# [OWNER: Zohra — Data Foundation (P3)]
 """Background task: embed a conversation into Qdrant (P3 indexing pipeline).
 
 Called after a conversation is closed/quoted so its transcript becomes
@@ -77,5 +77,5 @@ def re_embed_collection(self, collection: str) -> None:
     """
     log.info("worker.re_embed_started", collection=collection)
     # Implementation: query all rows with vector_id IS NOT NULL, re-embed, upsert.
-    # Filled in by Dev 1 during sprint 1 P3 work.
+    # Filled in by Zohra during sprint 1 P3 work.
     raise NotImplementedError("re_embed_collection not yet implemented")

@@ -1,4 +1,4 @@
-# [OWNER: Dev 3 — P2 Requirements Agent]
+# [OWNER: Akash — P2 Requirements Agent]
 """P2 Requirements Agent — document ingestion and structured extraction.
 
 POST /api/v1/requirements/upload        — Upload document (PDF/DOCX/PPTX/Excel/image/audio)

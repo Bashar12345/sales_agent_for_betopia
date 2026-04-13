@@ -1,4 +1,4 @@
-# [OWNER: Dev 1 — Data Foundation (P3)]
+# [OWNER: Zohra — Data Foundation (P3)]
 """ILLMPort — abstract interface for LLM text generation (OpenAI / Anthropic).
 
 Embedding is intentionally separated into IEmbeddingPort so the embedding

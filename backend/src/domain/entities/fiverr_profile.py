@@ -1,4 +1,4 @@
-# [OWNER: Dev 4 — Frontend, Auth & DevOps]
+# [OWNER: Bashar — Frontend, Auth & DevOps]
 """FiverrProfile — a Fiverr gig/profile owned by the agency.
 
 Salespersons register a Fiverr profile so the system can tag incoming leads

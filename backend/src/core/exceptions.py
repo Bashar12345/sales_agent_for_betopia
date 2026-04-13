@@ -1,4 +1,4 @@
-# [OWNER: Dev 1 — Data Foundation (P3)]
+# [OWNER: Zohra — Data Foundation (P3)]
 """Domain + HTTP exception hierarchy.
 
 Domain exceptions are raised in the domain/application layers (no HTTP knowledge).

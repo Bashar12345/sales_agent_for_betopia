@@ -1,4 +1,4 @@
-# [OWNER: Dev 4 — Frontend, Auth & DevOps]
+# [OWNER: Bashar — Frontend, Auth & DevOps]
 """Odoo ERP integration endpoints.
 
 Current scope: connection health check + manual lead/quotation sync.

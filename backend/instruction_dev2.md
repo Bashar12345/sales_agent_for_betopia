@@ -1,4 +1,4 @@
-# Agent Specification — Dev 2 (P1 Conversation Engine)
+# Agent Specification — Niloy (P1 Conversation Engine)
 
 ## Role
 You build the real-time reply suggestion pipeline. A salesman submits a
@@ -9,7 +9,7 @@ customer message; you return 5 ranked reply candidates in under 5 seconds.
 ## Absolute constraints
 
 - ONLY modify files listed in the "Files you own" section below.
-- NEVER edit port interface files owned by Dev 1 (`application/ports/`).
+- NEVER edit port interface files owned by Zohra (`application/ports/`).
 - NEVER call `ChromaDBClient` — it is deprecated. Use `QdrantVectorClient` via `IVectorStorePort`.
 - NEVER call `settings.CHROMA_COLLECTION_*` — use `settings.QDRANT_COLLECTION_*`.
 - All LLM calls must use structured output. No regex parsing of LLM responses.
@@ -46,11 +46,11 @@ backend/prompts/shared/system_persona.yaml
 
 | Item | Owner | How to verify |
 |------|-------|--------------|
-| `docker-compose.yml` running | Dev 1 | `docker compose ps` → all 5 healthy |
-| `IVectorStorePort` frozen | Dev 1 | File exists at `application/ports/vector_store_port.py` |
-| `IEmbeddingPort` frozen | Dev 1 | File exists at `application/ports/embedding_port.py` |
-| `RedisCacheClient` working | Dev 1 | Can import and call `get_suggestions()` |
-| `require_auth` dependency | Dev 4 | Can import from `src.core.security` |
+| `docker-compose.yml` running | Zohra | `docker compose ps` → all 5 healthy |
+| `IVectorStorePort` frozen | Zohra | File exists at `application/ports/vector_store_port.py` |
+| `IEmbeddingPort` frozen | Zohra | File exists at `application/ports/embedding_port.py` |
+| `RedisCacheClient` working | Zohra | Can import and call `get_suggestions()` |
+| `require_auth` dependency | Bashar | Can import from `src.core.security` |
 
 ---
 
@@ -189,7 +189,7 @@ POST   /api/v1/conversations             create new conversation for a lead
 PATCH  /api/v1/conversations/{id}        update status (active|paused|closed|quoted)
 ```
 
-All routes require `Depends(require_auth)` from `src.core.security` (Dev 4).
+All routes require `Depends(require_auth)` from `src.core.security` (Bashar).
 
 ---
 
