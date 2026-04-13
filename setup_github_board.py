@@ -40,7 +40,7 @@ LABELS: list[tuple[str, str, str]] = [
     # Ownership
     ("Zohra-DataFoundation",      "1D76DB", "Owner: Zohra — Data Foundation (P3 pipeline)"),
     ("Niloy-ConversationEngine",  "5319E7", "Owner: Niloy — P1 Conversation Engine"),
-    ("Akash-RequirementsAgent",   "006B75", "Owner: Akash — P2 Requirements Agent"),
+    ("Asif-RequirementsAgent",   "006B75", "Owner: Asif — P2 Requirements Agent"),
     ("Bashar-FrontendAuth",        "FBCA04", "Owner: Bashar — Frontend, Auth & DevOps"),
     # State
     ("blocked",                  "E4E669", "Waiting on a deliverable from another agent"),
@@ -83,7 +83,7 @@ ISSUES: list[Issue] = [
         title="[Zohra] B1 — docker-compose.yml: start all 5 local services",
         body=(
             "**Owner:** Zohra — Data Foundation\n"
-            "**Blocks:** Niloy, Akash, Bashar — nobody can run the stack locally without this\n\n"
+            "**Blocks:** Niloy, Asif, Bashar — nobody can run the stack locally without this\n\n"
             "## Services required\n"
             "| Service | Image | Host port |\n"
             "|---------|-------|-----------|\n"
@@ -110,7 +110,7 @@ ISSUES: list[Issue] = [
         title="[Zohra] B2 — postgres/init.sql: all 9 tables, enums, indexes, triggers",
         body=(
             "**Owner:** Zohra — Data Foundation\n"
-            "**Blocks:** Niloy (needs conversations/messages), Akash (needs requirements_docs/proposals)\n\n"
+            "**Blocks:** Niloy (needs conversations/messages), Asif (needs requirements_docs/proposals)\n\n"
             "## Table creation order (no FK violations)\n"
             "```\n"
             "sales_agents\n"
@@ -145,7 +145,7 @@ ISSUES: list[Issue] = [
         title="[Zohra] B3 — Freeze port interfaces: IVectorStorePort, IEmbeddingPort, ILLMPort, IEventBusPort",
         body=(
             "**Owner:** Zohra — Data Foundation\n"
-            "**Blocks:** Niloy and Akash code against these — signatures must not change after this closes\n\n"
+            "**Blocks:** Niloy and Asif code against these — signatures must not change after this closes\n\n"
             "## Frozen contracts\n"
             "| File | Interface | Signature summary |\n"
             "|------|-----------|-------------------|\n"
@@ -241,7 +241,7 @@ ISSUES: list[Issue] = [
             "**Owner:** Zohra\n\n"
             "## Acceptance\n"
             "- `celery_app` exposes 3 queues: `p1-high`, `p2-normal`, `p3-batch`\n"
-            "- Do NOT register Niloy or Akash tasks in this file\n"
+            "- Do NOT register Niloy or Asif tasks in this file\n"
             "- Other agents import `celery_app` and register their own tasks\n\n"
             "**File:** `src/workers/celery_app.py`"
         ),
@@ -346,12 +346,12 @@ ISSUES: list[Issue] = [
         milestone="P1-Live",
     ),
 
-    # ── Akash — P2 Requirements Agent ───────────────────────────────────────
+    # ── Asif — P2 Requirements Agent ───────────────────────────────────────
 
     Issue(
-        title="[Akash] Create ORM models: requirements_doc_model.py + proposal_model.py",
+        title="[Asif] Create ORM models: requirements_doc_model.py + proposal_model.py",
         body=(
-            "**Owner:** Akash — P2 Requirements Agent\n"
+            "**Owner:** Asif — P2 Requirements Agent\n"
             "**Depends on:** Zohra B2 (tables must exist in PostgreSQL)\n\n"
             "## requirements_doc_model.py\n"
             "Table: `requirements_docs`\n"
@@ -373,16 +373,16 @@ ISSUES: list[Issue] = [
             "- `src/infrastructure/db/models/proposal_model.py`\n"
             "- `src/infrastructure/db/repositories/requirements_doc_repository_impl.py`\n"
             "- `src/infrastructure/db/repositories/proposal_repository_impl.py`\n"
-            "_See_ `backend/instruction_akash.md`"
+            "_See_ `backend/instruction_asif.md`"
         ),
-        labels=["P1-Blocker", "Akash-RequirementsAgent", "blocked"],
+        labels=["P1-Blocker", "Asif-RequirementsAgent", "blocked"],
         milestone="P2-Live",
     ),
 
     Issue(
-        title="[Akash] extract_requirements + enrich_requirements Celery tasks (p2-normal)",
+        title="[Asif] extract_requirements + enrich_requirements Celery tasks (p2-normal)",
         body=(
-            "**Owner:** Akash\n"
+            "**Owner:** Asif\n"
             "**Depends on:** Zohra Qdrant + NATS + tables\n\n"
             "## extract_requirements\n"
             "Queue: `p2-normal` · max_retries=3\n"
@@ -401,14 +401,14 @@ ISSUES: list[Issue] = [
             "4. Enqueue `generate_quotation_doc`\n\n"
             "**File:** `src/workers/quotation_worker.py`"
         ),
-        labels=["P2-Core", "Akash-RequirementsAgent", "blocked"],
+        labels=["P2-Core", "Asif-RequirementsAgent", "blocked"],
         milestone="P2-Live",
     ),
 
     Issue(
-        title="[Akash] generate_quotation use case + generate_quotation_doc Celery task",
+        title="[Asif] generate_quotation use case + generate_quotation_doc Celery task",
         body=(
-            "**Owner:** Akash\n\n"
+            "**Owner:** Asif\n\n"
             "## generate_quotation (POST /api/v1/quotations/generate)\n"
             "1. LLM structured output → `list[LineItem]` + executive summary\n"
             "   Schema: `prompts/shared/output_schemas/quotation_line_items_v1.json`\n"
@@ -427,14 +427,14 @@ ISSUES: list[Issue] = [
             "**Files:** `src/application/use_cases/generate_quotation.py`, "
             "`src/infrastructure/clients/document_generator.py`"
         ),
-        labels=["P2-Core", "Akash-RequirementsAgent", "blocked"],
+        labels=["P2-Core", "Asif-RequirementsAgent", "blocked"],
         milestone="P2-Live",
     ),
 
     Issue(
-        title="[Akash] Resource upload: PDF/DOCX/URL parse → MinIO + Qdrant index",
+        title="[Asif] Resource upload: PDF/DOCX/URL parse → MinIO + Qdrant index",
         body=(
-            "**Owner:** Akash\n\n"
+            "**Owner:** Asif\n\n"
             "## Flow — POST /api/v1/resources/upload (multipart)\n"
             "1. Parse: PDF → pdfplumber · DOCX → python-docx · URL → httpx fetch\n"
             "2. Store binary in MinIO (bucket: `resources`)\n"
@@ -442,14 +442,14 @@ ISSUES: list[Issue] = [
             "4. Embed + upsert into `QDRANT_COLLECTION_REQUIREMENTS`\n\n"
             "**File:** `src/application/use_cases/upload_resource.py`"
         ),
-        labels=["P3-Quality", "Akash-RequirementsAgent"],
+        labels=["P3-Quality", "Asif-RequirementsAgent"],
         milestone="P2-Live",
     ),
 
     Issue(
-        title="[Akash] P2 prompt eval suite + quotation_line_items_v1.json schema",
+        title="[Asif] P2 prompt eval suite + quotation_line_items_v1.json schema",
         body=(
-            "**Owner:** Akash\n\n"
+            "**Owner:** Asif\n\n"
             "## Deliverables\n"
             "1. `prompts/shared/output_schemas/quotation_line_items_v1.json`:\n"
             "   ```json\n"
@@ -459,7 +459,7 @@ ISSUES: list[Issue] = [
             "3. All p2 prompts have `version` field — increment before any edit\n\n"
             "CI must run eval suite on every PR touching `prompts/p2_extraction/`."
         ),
-        labels=["P3-Quality", "Akash-RequirementsAgent"],
+        labels=["P3-Quality", "Asif-RequirementsAgent"],
         milestone="P2-Live",
     ),
 
@@ -469,7 +469,7 @@ ISSUES: list[Issue] = [
         title="[Bashar] security.py: require_auth + require_role (RS256 JWT) — LAND FIRST",
         body=(
             "**Owner:** Bashar — Frontend, Auth & DevOps\n"
-            "**Blocks:** Niloy and Akash — cannot protect any route without this\n\n"
+            "**Blocks:** Niloy and Asif — cannot protect any route without this\n\n"
             "## require_auth\n"
             "```python\n"
             "async def require_auth(\n"
@@ -552,7 +552,7 @@ ISSUES: list[Issue] = [
         title="[Bashar] Next.js 15 frontend: 7 screens (dashboard, chat, quotation, resources, admin)",
         body=(
             "**Owner:** Bashar\n"
-            "**Depends on:** Niloy P1 API (suggestion panel), Akash P2 API (quotation builder)\n\n"
+            "**Depends on:** Niloy P1 API (suggestion panel), Asif P2 API (quotation builder)\n\n"
             "## Screens\n"
             "| Screen | Route | Notes |\n"
             "|--------|-------|-------|\n"

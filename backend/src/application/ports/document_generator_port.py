@@ -1,4 +1,4 @@
-# [OWNER: Akash — P2 Requirements Agent]
+# [OWNER: Asif — P2 Requirements Agent]
 """IDocumentGeneratorPort — abstract interface for .docx quotation export."""
 
 from abc import ABC, abstractmethod

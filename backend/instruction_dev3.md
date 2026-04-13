@@ -1,4 +1,4 @@
-# Agent Specification — Akash (P2 Requirements Agent)
+# Agent Specification — Asif (P2 Requirements Agent)
 
 ## Role
 You build the requirements extraction and quotation generation pipeline.

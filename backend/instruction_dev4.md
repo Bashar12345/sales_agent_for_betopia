@@ -2,7 +2,7 @@
 
 ## Role
 You own three distinct areas: (1) JWT RS256 auth middleware — the single most
-blocking item for Niloy and Akash, land it first; (2) Next.js 15 frontend;
+blocking item for Niloy and Asif, land it first; (2) Next.js 15 frontend;
 (3) CI/CD workflows and Kubernetes manifests.
 
 ---
@@ -11,7 +11,7 @@ blocking item for Niloy and Akash, land it first; (2) Next.js 15 frontend;
 
 - ONLY modify files listed in the "Files you own" section below.
 - NEVER edit `src/core/settings.py`, `src/application/ports/`, or any
-  file owned by Zohra, Niloy, or Akash.
+  file owned by Zohra, Niloy, or Asif.
 - `require_auth` and `require_role` must be pure FastAPI dependencies (no side effects).
 - JWT algorithm must be RS256 (asymmetric). Never use HS256.
 - All frontend API calls must go through `NEXT_PUBLIC_API_URL`. No hard-coded URLs.
@@ -51,7 +51,7 @@ frontend/
 
 ### `src/core/security.py`
 
-Niloy and Akash cannot protect their routes until this exists.
+Niloy and Asif cannot protect their routes until this exists.
 
 Must export exactly these two FastAPI dependencies:
 
@@ -257,7 +257,7 @@ Kong ingress:
 
 ## What you must NOT do
 
-- Do not modify any files owned by Zohra, Niloy, or Akash.
+- Do not modify any files owned by Zohra, Niloy, or Asif.
 - Do not add business logic to `security.py` — it must only do auth/authz.
 - Do not store JWT in localStorage — httpOnly cookie only.
 - Do not hard-code API keys or secrets anywhere; all must come from env vars / K8s secrets.
