@@ -507,10 +507,10 @@ file.uploaded            { lead_id, s3_uri, mime_type, size_bytes }
 
 ```
 main              ← protected, deploys to staging
-feature/dev1-*    ← Zohra branches
-feature/dev2-*    ← Niloy branches
-feature/dev3-*    ← Akash branches
-feature/dev4-*    ← Bashar branches
+feature/zohra-*    ← Zohra branches
+feature/niloy-*    ← Niloy branches
+feature/akash-*    ← Akash branches
+feature/bashar-*    ← Bashar branches
 ```
 
 PR into `main` requires: CI green + 1 review from any other dev.
