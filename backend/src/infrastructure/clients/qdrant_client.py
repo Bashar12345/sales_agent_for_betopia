@@ -25,7 +25,6 @@ from qdrant_client.models import (
     MatchValue,
     HnswConfigDiff,
     PointStruct,
-    QuantizationConfig,
     ScalarQuantization,
     ScalarQuantizationConfig,
     ScalarType,
@@ -45,12 +44,10 @@ _HNSW_CONFIG = HnswConfigDiff(
     ef_construct=settings.QDRANT_HNSW_EF_CONSTRUCT,
 )
 
-_QUANTIZATION_CONFIG = QuantizationConfig(
-    scalar=ScalarQuantization(
-        scalar=ScalarQuantizationConfig(
-            type=ScalarType.INT8,
-            always_ram=True,   # keep quantised vectors in RAM for low latency
-        )
+_QUANTIZATION_CONFIG = ScalarQuantization(
+    scalar=ScalarQuantizationConfig(
+        type=ScalarType.INT8,
+        always_ram=True,   # keep quantised vectors in RAM for low latency
     )
 )
 
@@ -67,7 +64,8 @@ class QdrantVectorClient(IVectorStorePort):
             host=settings.QDRANT_HOST,
             port=settings.QDRANT_PORT,
             api_key=settings.QDRANT_API_KEY or None,
-            prefer_grpc=True,   # gRPC is ~2× faster than REST for batch ops
+            prefer_grpc=False,  # REST only for local dev (gRPC on port 6334 not exposed)
+            check_compatibility=False,
         )
 
     async def ensure_collections(self) -> None:
@@ -75,7 +73,8 @@ class QdrantVectorClient(IVectorStorePort):
 
         Called once during application startup.
         """
-        existing = {c.name for c in await self._client.get_collections()}
+        response = await self._client.get_collections()
+        existing = {c.name for c in response.collections}
         for name in _COLLECTIONS:
             if name not in existing:
                 await self._client.create_collection(
@@ -132,9 +131,9 @@ class QdrantVectorClient(IVectorStorePort):
             qdrant_filter = Filter(must=conditions)
 
         try:
-            hits = await self._client.search(
+            response = await self._client.query_points(
                 collection_name=collection,
-                query_vector=query_vector,
+                query=query_vector,
                 limit=n_results,
                 query_filter=qdrant_filter,
                 with_payload=True,
@@ -150,7 +149,7 @@ class QdrantVectorClient(IVectorStorePort):
                         if k != "text"
                     },
                 }
-                for hit in hits
+                for hit in response.points
             ]
         except Exception as exc:
             log.error("qdrant.query_failed", collection=collection, error=str(exc))

@@ -2,11 +2,12 @@
 """Celery application factory.
 
 Workers handle CPU/IO-heavy background tasks so the HTTP server
-stays responsive for the ~1000 daily active users.
+stays responsive for the ~2000 concurrent users.
 
 Current tasks:
-  - generate_quotation_doc: build .docx after a quotation is created
-  - index_conversation:     embed a closed conversation into ChromaDB
+  - generate_p1_suggestions: full P1 pipeline (intent → embed → Qdrant → LLM → cache)
+  - generate_quotation_doc:  build .docx after a quotation is created
+  - index_conversation:      embed a closed conversation into Qdrant (P3)
 """
 
 from celery import Celery
@@ -18,8 +19,9 @@ celery_app = Celery(
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
     include=[
-        "src.workers.quotation_worker",
-        "src.workers.indexing_worker",
+        "src.workers.p1_suggestion_worker",   # P1: generate 5 suggestions
+        "src.workers.quotation_worker",        # P2: .docx quotation generation
+        "src.workers.indexing_worker",         # P3: embed conversations into Qdrant
     ],
 )
 

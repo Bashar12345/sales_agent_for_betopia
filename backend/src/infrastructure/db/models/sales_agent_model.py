@@ -3,7 +3,8 @@
 
 import uuid
 
-from sqlalchemy import Boolean, Enum, Integer, String
+from sqlalchemy import Boolean, Integer, String
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -22,7 +23,9 @@ class SalesAgentModel(TimestampMixin, Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(
-        Enum(AgentRole), nullable=False, default=AgentRole.AGENT
+        PgEnum("SALESPERSON", "SALES_MANAGER", "ADMIN", "READ_ONLY",
+               name="agentrole", create_type=False),
+        nullable=False, default=AgentRole.SALESPERSON.value,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     odoo_user_id: Mapped[int | None] = mapped_column(Integer)

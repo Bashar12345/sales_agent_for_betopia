@@ -29,11 +29,16 @@ class ILLMPort(ABC):
         """
 
     @abstractmethod
-    async def suggest_replies(
+    async def generate_suggestions(
         self,
         customer_message: str,
+        intent_label: str,
         recent_messages: list[Message],
         similar_conversations: list[str],
         resources_context: list[str],
-    ) -> list[str]:
-        """Return up to 5 ranked reply candidates for the salesman (P1 pipeline)."""
+    ) -> list[dict]:
+        """Return exactly 5 ranked suggestion dicts for the salesperson (P1 pipeline)."""
+
+    @abstractmethod
+    async def embed_text(self, text: str) -> list[float]:
+        """Embed text using the configured embedding model (3072-d)."""

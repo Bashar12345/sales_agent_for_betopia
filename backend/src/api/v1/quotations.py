@@ -12,9 +12,9 @@ from src.application.use_cases.generate_quotation import GenerateQuotationUseCas
 from src.core.exceptions import LLMError, NotFoundError, ValidationError
 from src.domain.entities.quotation import Quotation
 from src.domain.services.quotation_service import QuotationService
-from src.infrastructure.clients.chromadb_client import ChromaDBClient
 from src.infrastructure.clients.document_generator import DocumentGenerator
 from src.infrastructure.clients.llm_client import LLMClient
+from src.infrastructure.clients.qdrant_client import QdrantVectorClient
 from src.infrastructure.db.repositories.conversation_repository_impl import ConversationRepositoryImpl
 from src.infrastructure.db.repositories.lead_repository_impl import LeadRepositoryImpl
 from src.infrastructure.db.repositories.quotation_repository_impl import QuotationRepositoryImpl
@@ -29,7 +29,7 @@ def _deps(db: AsyncSession = Depends(get_db)):
         "lead_repo": LeadRepositoryImpl(db),
         "quot_repo": QuotationRepositoryImpl(db),
         "llm": LLMClient(),
-        "vs": ChromaDBClient(),
+        "vs": QdrantVectorClient(),
         "svc": QuotationService(),
     }
 

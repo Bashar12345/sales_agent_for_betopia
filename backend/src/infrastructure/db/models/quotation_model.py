@@ -7,7 +7,8 @@ Line items are stored as JSONB for efficient partial-field querying.
 import uuid
 from typing import Any
 
-from sqlalchemy import Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Float, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -37,7 +38,9 @@ class QuotationModel(TimestampMixin, Base):
     total_amount: Mapped[float] = mapped_column(Float, default=0.0)
     currency: Mapped[str] = mapped_column(String(8), default="USD")
     status: Mapped[str] = mapped_column(
-        Enum(QuotationStatus), nullable=False, default=QuotationStatus.DRAFT, index=True
+        PgEnum("draft", "under_review", "sent", "accepted", "rejected",
+               name="quotationstatus", create_type=False),
+        nullable=False, default=QuotationStatus.DRAFT.value, index=True,
     )
     doc_path: Mapped[str | None] = mapped_column(String(512))
     vector_id: Mapped[str | None] = mapped_column(String(64))

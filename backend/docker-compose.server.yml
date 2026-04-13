@@ -59,19 +59,15 @@ services:
       POSTGRES_USER: betopia
       POSTGRES_PASSWORD: betopia_secret
       POSTGRES_DB: sales_agent
-      # Enable logical replication for Debezium CDC (future)
-      POSTGRES_INITDB_ARGS: "--wal-level=logical"
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./deploy/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     command: >
       postgres
         -c wal_level=logical
         -c max_replication_slots=4
         -c max_wal_senders=4
-        -c shared_preload_libraries=pg_stat_statements
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U betopia -d sales_agent"]
       interval: 10s
@@ -91,7 +87,7 @@ services:
       QDRANT__SERVICE__HTTP_PORT: 6333
       QDRANT__SERVICE__GRPC_PORT: 6334
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/readyz"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:6333/readyz"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -3,7 +3,8 @@
 
 import uuid
 
-from sqlalchemy import Enum, Float, ForeignKey, String, Text
+from sqlalchemy import Float, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -25,10 +26,13 @@ class LeadModel(TimestampMixin, Base):
     budget: Mapped[float | None] = mapped_column(Float)
     requirement_summary: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(
-        Enum(LeadStatus), nullable=False, default=LeadStatus.NEW, index=True
+        PgEnum("new", "in_conversation", "quoted", "won", "lost",
+               name="leadstatus", create_type=False),
+        nullable=False, default=LeadStatus.NEW.value, index=True,
     )
     source: Mapped[str] = mapped_column(
-        Enum(LeadSource), nullable=False, default=LeadSource.FIVERR
+        PgEnum("fiverr", "manual", name="leadsource", create_type=False),
+        nullable=False, default=LeadSource.FIVERR.value,
     )
     assigned_agent_id: Mapped[str | None] = mapped_column(
         PGUUID(as_uuid=False), ForeignKey("sales_agents.id"), index=True

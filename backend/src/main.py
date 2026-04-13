@@ -20,6 +20,7 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from src.api.v1.router import v1_router
@@ -112,6 +113,9 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 app.include_router(v1_router)
+
+# ── Test Console UI (dev only) ────────────────────────────────────────────────
+app.mount("/ui", StaticFiles(directory="static", html=True), name="ui")
 
 
 # ── Health check (used by Docker healthcheck + Kubernetes liveness probe) ─────

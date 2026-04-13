@@ -22,6 +22,7 @@ from src.api.v1.replies import router as replies_router
 from src.api.v1.requirements import router as requirements_router
 from src.api.v1.resources import router as resources_router
 from src.api.v1.suggestions import router as suggestions_router
+from src.api.v1.ws import router as ws_router
 from src.api.v1.integrations.odoo import router as odoo_router
 
 v1_router = APIRouter(prefix="/api/v1")
@@ -32,6 +33,7 @@ v1_router.include_router(health.router)
 # ── P1: Conversation Engine ───────────────────────────────────────────────────
 v1_router.include_router(input_router)          # POST /input/message
 v1_router.include_router(suggestions_router)    # GET  /suggestions/{lead_id}
+v1_router.include_router(ws_router)             # WS   /ws/suggestions/{lead_id}
 
 # ── P2: Requirements Agent ────────────────────────────────────────────────────
 v1_router.include_router(requirements_router)   # POST /requirements/upload

@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.entities.conversation import Conversation, ConversationStatus
-from src.domain.entities.message import Message, MessageRole
+from src.domain.entities.message import Message, MessageDirection, MessageRole
 from src.domain.repositories.conversation_repository import IConversationRepository
 from src.infrastructure.db.models.conversation_model import ConversationModel, MessageModel
 
@@ -18,9 +18,13 @@ def _msg_to_entity(m: MessageModel) -> Message:
         id=uuid.UUID(m.id),
         conversation_id=uuid.UUID(m.conversation_id),
         role=MessageRole(m.role),
+        direction=MessageDirection(m.direction) if m.direction else MessageDirection.IN,
         content=m.content,
         used_in_quotation=m.used_in_quotation,
-        created_at=datetime.fromisoformat(m.created_at),
+        created_at=datetime.fromisoformat(m.created_at) if isinstance(m.created_at, str) else m.created_at,
+        sent_at=m.sent_at,
+        intent_label=m.intent_label,
+        suggestion_selected_rank=m.suggestion_selected_rank,
     )
 
 
@@ -116,3 +120,25 @@ class ConversationRepositoryImpl(IConversationRepository):
         if model:
             await self._session.delete(model)
             await self._session.flush()
+
+    async def add_message(self, message: Message) -> Message:
+        """Persist a single new message to an existing conversation.
+
+        Called by POST /input/message after the Message entity is created.
+        The conversation must already exist (no cascade create here).
+        """
+        model = MessageModel(
+            id=str(message.id),
+            conversation_id=str(message.conversation_id),
+            role=message.role.value,
+            direction=message.direction.value if message.direction else None,
+            content=message.content,
+            used_in_quotation=message.used_in_quotation,
+            created_at=message.created_at.isoformat(),
+            sent_at=message.sent_at,
+            intent_label=message.intent_label,
+            suggestion_selected_rank=message.suggestion_selected_rank,
+        )
+        self._session.add(model)
+        await self._session.flush()
+        return message

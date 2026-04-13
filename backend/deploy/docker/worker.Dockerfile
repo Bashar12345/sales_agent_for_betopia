@@ -55,4 +55,5 @@ HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
 CMD ["celery", "-A", "src.workers.celery_app", "worker", \
      "--loglevel=info", \
      "--concurrency=4", \
-     "--max-tasks-per-child=100"]
+     "--max-tasks-per-child=100", \
+     "-Q", "p1,celery"]

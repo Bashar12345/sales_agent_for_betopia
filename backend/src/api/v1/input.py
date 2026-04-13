@@ -33,6 +33,7 @@ from src.infrastructure.db.repositories.conversation_repository_impl import (
     ConversationRepositoryImpl,
 )
 from src.infrastructure.db.session import get_db
+from src.workers.p1_suggestion_worker import generate_p1_suggestions
 
 router = APIRouter(prefix="/input", tags=["p1-input"])
 
@@ -106,11 +107,19 @@ async def submit_message(
             lead_id=str(dto.lead_id),
         )
     except EventBusError:
-        # NATS failure is non-fatal — suggestions will be generated synchronously
-        # by the fallback Celery worker (fire-and-forget)
+        # NATS failure is non-fatal — Celery worker below handles generation
         pass
     finally:
         await nats_client.close()
+
+    # Dispatch P1 pipeline regardless of NATS outcome.
+    # NATS publish above is for WebSocket push notification;
+    # Celery is the actual worker that generates suggestions.
+    generate_p1_suggestions.delay(
+        str(message_id),
+        str(dto.conversation_id),
+        str(dto.lead_id),
+    )
 
     return MessageAcceptedResponseDTO(
         task_id=task_id,

@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.application.dto.resource_dto import UploadResourceDTO
 from src.application.use_cases.upload_resource import UploadResourceUseCase
 from src.domain.entities.resource import Resource, ResourceType
-from src.infrastructure.clients.chromadb_client import ChromaDBClient
+from src.infrastructure.clients.qdrant_client import QdrantVectorClient
 from src.infrastructure.db.repositories.resource_repository_impl import ResourceRepositoryImpl
 from src.infrastructure.db.session import get_db
 
@@ -57,7 +57,7 @@ async def upload_resource(
     )
     use_case = UploadResourceUseCase(
         resource_repo=ResourceRepositoryImpl(db),
-        vector_store=ChromaDBClient(),
+        vector_store=QdrantVectorClient(),
     )
     return await use_case.execute(dto)
 
@@ -79,10 +79,10 @@ async def delete_resource(
     db: AsyncSession = Depends(get_db),
 ) -> None:
     repo = ResourceRepositoryImpl(db)
-    vs = ChromaDBClient()
+    vs = QdrantVectorClient()
     resource = await repo.get_by_id(resource_id)
     if not resource:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resource not found")
     await repo.delete(resource_id)
     from src.core.settings import settings
-    await vs.delete(settings.CHROMA_COLLECTION_RESOURCES, str(resource_id))
+    await vs.delete(settings.QDRANT_COLLECTION_PRICING, str(resource_id))

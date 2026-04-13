@@ -3,7 +3,8 @@
 
 import uuid
 
-from sqlalchemy import Enum, ForeignKey, String, Text
+from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -19,7 +20,11 @@ class ResourceModel(TimestampMixin, Base):
         PGUUID(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4())
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    resource_type: Mapped[str] = mapped_column(Enum(ResourceType), nullable=False, index=True)
+    resource_type: Mapped[str] = mapped_column(
+        PgEnum("price_list", "service_catalogue", "past_quotation",
+               "conversation_sample", "other", name="resourcetype", create_type=False),
+        nullable=False, index=True,
+    )
     content: Mapped[str] = mapped_column(Text, nullable=False)  # PostgreSQL TEXT has no length limit
     file_path: Mapped[str | None] = mapped_column(String(512))
     original_filename: Mapped[str | None] = mapped_column(String(255))
