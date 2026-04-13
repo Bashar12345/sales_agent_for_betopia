@@ -133,7 +133,18 @@ class Settings(BaseSettings):
     NATS_STREAM_NAME: str = "sales_agent"
     NATS_SUBJECT_PREFIX: str = "betopia.sales"
 
-    # ── Document output ───────────────────────────────────────────────────────
+    # ── MinIO / S3 object storage (VM3) ──────────────────────────────────────
+    MINIO_ENDPOINT: str = "localhost:9000"     # host:port (no http:// prefix)
+    MINIO_ACCESS_KEY: str = ""
+    MINIO_SECRET_KEY: str = ""
+    MINIO_SECURE: bool = False                 # True for HTTPS/TLS MinIO
+    MINIO_BUCKET_PROPOSALS: str = "proposals"
+    MINIO_BUCKET_QUOTATIONS: str = "quotations"
+    MINIO_BUCKET_REQUIREMENTS: str = "requirements"
+    # Presigned URL expiry — 1 hour for proposal downloads
+    MINIO_PRESIGN_EXPIRY_SECONDS: int = 3600
+
+    # ── Document output (local fallback when MinIO is not configured) ─────────
     DOC_OUTPUT_DIR: str = "/tmp/quotations"
     PROPOSAL_OUTPUT_DIR: str = "/tmp/proposals"
 

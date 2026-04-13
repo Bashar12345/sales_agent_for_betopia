@@ -1,0 +1,112 @@
+version: "3.9"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VM 2 — Celery Worker
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# No ports exposed to the internet.
+# Connects OUTBOUND to:
+#   VM1: Redis :6379, NATS :4222, PostgreSQL :5432
+#   VM3: Qdrant :6333, MinIO :9000
+#
+# Pre-flight on VM2:
+#   1. Copy .env.vm2.example → .env, fill in VM1_INTERNAL_IP and VM3_INTERNAL_IP
+#   2. Copy certs/ and prompts/ from VM1 (or use shared NFS / object storage)
+#   3. docker compose -f docker-compose.vm2.yml up -d
+# ═══════════════════════════════════════════════════════════════════════════════
+
+networks:
+  vm2-internal:
+    driver: bridge
+
+services:
+
+  # ── Celery Worker ─────────────────────────────────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: deploy/docker/worker.Dockerfile
+    container_name: sales-agent-worker
+    restart: unless-stopped
+    networks:
+      - vm2-internal
+    # Map VM1/VM3 service names to their actual internal IPs
+    extra_hosts:
+      - "postgres:${VM1_INTERNAL_IP:?VM1_INTERNAL_IP is required}"
+      - "redis:${VM1_INTERNAL_IP:?VM1_INTERNAL_IP is required}"
+      - "nats:${VM1_INTERNAL_IP:?VM1_INTERNAL_IP is required}"
+      - "qdrant:${VM3_INTERNAL_IP:?VM3_INTERNAL_IP is required}"
+      - "minio:${VM3_INTERNAL_IP:?VM3_INTERNAL_IP is required}"
+    env_file: .env
+    environment:
+      # Resolve all services via extra_hosts above
+      POSTGRES_HOST: postgres
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      NATS_URL: nats://nats:4222
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: "6333"
+      MINIO_ENDPOINT: minio:9000
+      # Workers don't need VLLM (classification runs in the app tier)
+      VLLM_BASE_URL: ${VLLM_BASE_URL:-}
+    volumes:
+      - ./certs:/app/certs:ro
+      - ./prompts:/app/prompts:ro
+    # Memory limit — adjust for VM2 spec (LLM doc generation is heavy)
+    mem_limit: ${WORKER_MEM_LIMIT:-4g}
+    mem_reservation: 1g
+    healthcheck:
+      test: ["CMD", "celery", "-A", "src.workers.celery_app", "inspect", "ping"]
+      interval: 60s
+      timeout: 15s
+      start_period: 30s
+      retries: 3
+
+  # ── Celery Beat (scheduled tasks — one instance only, run on VM2) ─────────
+  # Handles periodic tasks: embedding cache cleanup, lead score recalculation, etc.
+  beat:
+    build:
+      context: .
+      dockerfile: deploy/docker/worker.Dockerfile
+    container_name: sales-agent-beat
+    restart: unless-stopped
+    networks:
+      - vm2-internal
+    extra_hosts:
+      - "redis:${VM1_INTERNAL_IP:?VM1_INTERNAL_IP is required}"
+      - "postgres:${VM1_INTERNAL_IP:?VM1_INTERNAL_IP is required}"
+    env_file: .env
+    environment:
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      POSTGRES_HOST: postgres
+    volumes:
+      - ./certs:/app/certs:ro
+      - beat_schedule:/app/beat
+    command: >
+      celery -A src.workers.celery_app beat
+        --loglevel=info
+        --schedule=/app/beat/celerybeat-schedule
+    depends_on:
+      - worker
+
+  # ── Celery Flower (task monitoring — optional, internal only) ─────────────
+  # Access via SSH tunnel: ssh -L 5555:localhost:5555 vm2-user@VM2_IP
+  flower:
+    image: mher/flower:2.0
+    container_name: celery-flower
+    restart: unless-stopped
+    networks:
+      - vm2-internal
+    ports:
+      - "127.0.0.1:5555:5555"
+    extra_hosts:
+      - "redis:${VM1_INTERNAL_IP:?VM1_INTERNAL_IP is required}"
+    environment:
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      FLOWER_BASIC_AUTH: ${FLOWER_USER:-admin}:${FLOWER_PASSWORD:?FLOWER_PASSWORD is required}
+      FLOWER_PORT: "5555"
+    depends_on:
+      - worker
+
+volumes:
+  beat_schedule:
+    driver: local

@@ -44,6 +44,9 @@ dependencies = [
     "python-pptx>=1.0.0",             # PPTX parsing
     "openpyxl>=3.1.0",                # Excel parsing
 
+    # Object storage — MinIO S3-compatible (VM3)
+    "minio>=7.2.0",
+
     # File upload handling
     "python-multipart>=0.0.9",
     "aiofiles>=23.2.1",

@@ -1,0 +1,238 @@
+version: "3.9"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VM 1 — API Gateway + Application Server + Brokers
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Public ports (internet-facing):
+#   :8000  — Kong HTTP  (only port exposed to the public internet)
+#   :8443  — Kong HTTPS (TLS termination at Kong; cert via cert-manager or manual)
+#
+# Internal-only ports (firewall: allow only from VM2/VM3 private IPs):
+#   :5432  — PostgreSQL  (VM1 & VM2 workers)
+#   :6379  — Redis       (VM1 & VM2 workers)
+#   :4222  — NATS client (VM1 & VM2 workers)
+#   :8222  — NATS HTTP monitoring (VM1 only)
+#
+# Usage:
+#   cp .env.vm1.example .env
+#   docker compose -f docker-compose.vm1.yml up -d
+# ═══════════════════════════════════════════════════════════════════════════════
+
+networks:
+  vm1-internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+services:
+
+  # ── Kong API Gateway (ONLY public entry point) ──────────────────────────────
+  kong:
+    image: kong:3.9
+    container_name: kong
+    restart: unless-stopped
+    networks:
+      - vm1-internal
+    ports:
+      - "8000:8000"     # HTTP — public, internet-facing
+      - "8443:8443"     # HTTPS — public, internet-facing
+      # Admin API: intentionally NOT exposed. Access via: docker exec kong kong admin ...
+    environment:
+      KONG_DATABASE: "off"                                       # DB-less mode
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
+      KONG_PROXY_LISTEN: "0.0.0.0:8000, 0.0.0.0:8443 ssl"
+      KONG_ADMIN_LISTEN: "127.0.0.1:8001"                       # admin locked to loopback
+      KONG_LOG_LEVEL: info
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_PLUGINS: bundled
+      KONG_NGINX_WORKER_PROCESSES: "2"
+      # Redis password exposed to Kong's built-in env vault.
+      # kong.yml references it as: {vault://env/KONG_REDIS_PASSWORD}
+      KONG_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    volumes:
+      - ./deploy/kong/kong.yml:/etc/kong/kong.yml:ro
+      - ./certs:/etc/kong/certs:ro             # TLS certs (private.pem, fullchain.pem)
+    depends_on:
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI Application Server (internal :8080 only) ───────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: deploy/docker/app.Dockerfile
+    container_name: sales-agent-app
+    restart: unless-stopped
+    networks:
+      - vm1-internal
+    # NO port mapping to host — Kong is the only entry point
+    expose:
+      - "8080"
+    env_file: .env
+    environment:
+      # Services on same VM — use container names
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      REDIS_URL: redis://redis:6379/0
+      NATS_URL: nats://nats:4222
+      # Services on VM3 — resolved via VM3_INTERNAL_IP in .env
+      QDRANT_HOST: ${VM3_INTERNAL_IP:-localhost}
+      QDRANT_PORT: "6333"
+      MINIO_ENDPOINT: ${VM3_INTERNAL_IP:-localhost}:9000
+      VLLM_BASE_URL: ${VLLM_BASE_URL:-http://localhost:8090}
+    volumes:
+      - ./certs:/app/certs:ro
+      - ./prompts:/app/prompts:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+
+  # ── PostgreSQL 17 ─────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:17-alpine
+    container_name: postgres
+    restart: unless-stopped
+    networks:
+      - vm1-internal
+    ports:
+      # Expose on host for VM2 Celery workers (restrict to VM2 IP via OS firewall)
+      - "${POSTGRES_HOST_BIND:-0.0.0.0}:5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-betopia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-sales_agent}
+      POSTGRES_INITDB_ARGS: "--wal-level=logical"
+    command: >
+      postgres
+        -c wal_level=logical
+        -c max_replication_slots=4
+        -c max_wal_senders=4
+        -c max_connections=200
+        -c shared_preload_libraries=pg_stat_statements
+        -c pg_stat_statements.track=all
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-betopia} -d ${POSTGRES_DB:-sales_agent}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis 7.4+ (Celery broker + suggestion/embedding cache + Kong rate-limit) ─
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis
+    restart: unless-stopped
+    networks:
+      - vm1-internal
+    ports:
+      # Expose on host for VM2 workers (restrict to VM2 IP via OS firewall)
+      - "${REDIS_HOST_BIND:-0.0.0.0}:6379:6379"
+    command: >
+      redis-server
+        --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+        --appendonly yes
+        --maxmemory ${REDIS_MAX_MEMORY:-1gb}
+        --maxmemory-policy allkeys-lru
+        --save 900 1
+        --save 300 10
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── NATS JetStream (event bus: VM1 app + VM2 workers) ────────────────────
+  nats:
+    image: nats:2.10-alpine
+    container_name: nats
+    restart: unless-stopped
+    networks:
+      - vm1-internal
+    ports:
+      # Client port — expose for VM2 workers (restrict via OS firewall)
+      - "${NATS_HOST_BIND:-0.0.0.0}:4222:4222"
+      # HTTP monitoring — internal only
+      - "127.0.0.1:8222:8222"
+    command: >
+      -js
+      -m 8222
+      --store_dir /data
+      --max_file_store 5GB
+      --max_mem_store 256MB
+    volumes:
+      - nats_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Prometheus (optional, comment out to save VM1 resources) ─────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    networks:
+      - vm1-internal
+    ports:
+      - "127.0.0.1:9090:9090"    # internal only
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"
+
+  # ── Grafana (optional) ────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    networks:
+      - vm1-internal
+    ports:
+      - "127.0.0.1:3000:3000"    # internal only — tunnel via SSH to access
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?GRAFANA_PASSWORD is required}
+      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s:%(http_port)s/"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  nats_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

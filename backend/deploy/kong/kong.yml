@@ -1,0 +1,155 @@
+_format_version: "3.0"
+_transform: true
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Kong 3.9 DB-less declarative configuration
+# Sales Intelligence Agent — API Gateway layer (VM1)
+#
+# Auth:    Handled by FastAPI (RS256 JWT). Kong passes Authorization header through.
+# Rate:    100 req/min per IP (global). FastAPI adds per-user check via Redis.
+# Uploads: 50 MB allowed on /requirements/upload. 10 MB everywhere else.
+# CORS:    Managed here — FastAPI middleware disabled in production.
+# Tracing: X-Request-ID injected on every request.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ── FastAPI upstream ────────────────────────────────────────────────────────
+  - name: sales-agent-api
+    host: app                          # container name on vm1-internal network
+    port: 8080
+    protocol: http
+    connect_timeout: 10000             # ms
+    write_timeout: 120000              # ms (allow long file uploads + LLM calls)
+    read_timeout: 120000
+    retries: 2
+
+    routes:
+      # ── Health check (no auth, no rate limit — for load balancer probes) ───
+      - name: health
+        paths: ["/health"]
+        methods: ["GET", "HEAD"]
+        strip_path: false
+        plugins:
+          # Disable rate-limiting for health probes
+          - name: rate-limiting
+            config:
+              minute: 600              # effectively unlimited for LB probes
+              policy: local
+
+      # ── API v1 — all routes (rate-limited, CORS-handled) ───────────────────
+      - name: api-v1
+        paths: ["/api/v1"]
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
+        strip_path: false
+        preserve_host: false
+
+      # ── File upload override — larger body limit for P2 document ingestion ─
+      - name: requirements-upload
+        paths: ["/api/v1/requirements/upload"]
+        methods: ["POST", "OPTIONS"]
+        strip_path: false
+        plugins:
+          - name: request-size-limiting
+            config:
+              allowed_payload_size: 50   # MB — PDF/DOCX/audio files
+              size_unit: megabytes
+
+      # ── WebSocket upgrade (real-time suggestion delivery) ──────────────────
+      - name: websocket-suggestions
+        paths: ["/api/v1/ws"]
+        methods: ["GET"]
+        strip_path: false
+        protocols: ["http", "https", "ws", "wss"]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Global plugins (apply to all routes unless overridden)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+plugins:
+
+  # ── CORS ────────────────────────────────────────────────────────────────────
+  # Handle OPTIONS preflight and inject CORS headers before reaching FastAPI.
+  # FastAPI's CORSMiddleware is kept as fallback for non-Kong deployments.
+  - name: cors
+    config:
+      origins:
+        - "*"                          # Restrict to your domain in production:
+        # - "https://app.betopia.com"   # e.g. "https://app.betopia.com"
+      methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+        - HEAD
+      headers:
+        - Accept
+        - Authorization
+        - Content-Type
+        - X-Idempotency-Key
+        - X-Request-ID
+      exposed_headers:
+        - X-Request-ID
+        - X-RateLimit-Limit-Minute
+        - X-RateLimit-Remaining-Minute
+      credentials: true
+      max_age: 3600
+      preflight_continue: false
+
+  # ── Rate Limiting (Redis-backed, shared across Kong replicas) ──────────────
+  # 100 req/min per IP. Kong identifies users by IP here;
+  # FastAPI's RedisCacheClient adds per-authenticated-user enforcement.
+  #
+  # Secret: KONG_REDIS_PASSWORD env var is read via Kong's built-in env vault.
+  # Set KONG_REDIS_PASSWORD=${REDIS_PASSWORD} in Kong's container environment
+  # (see docker-compose.vm1.yml). The {vault://env/...} syntax is Kong 3.x only.
+  - name: rate-limiting
+    config:
+      minute: 100
+      policy: redis
+      redis:
+        host: redis                    # container name on vm1-internal network
+        port: 6379
+        password: "{vault://env/KONG_REDIS_PASSWORD}"
+        database: 2                    # DB 2 reserved for Kong rate limiting
+      limit_by: ip
+      fault_tolerant: true             # degrade gracefully if Redis is unavailable
+      hide_client_headers: false
+
+  # ── Default request size (10 MB) — overridden on /requirements/upload ──────
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 10
+      size_unit: megabytes
+
+  # ── Request ID injection (distributed tracing) ─────────────────────────────
+  - name: correlation-id
+    config:
+      header_name: X-Request-ID
+      generator: uuid#counter
+      echo_downstream: true
+
+  # ── Response headers — security hardening ────────────────────────────────
+  - name: response-transformer
+    config:
+      add:
+        headers:
+          - "X-Content-Type-Options:nosniff"
+          - "X-Frame-Options:DENY"
+          - "Referrer-Policy:strict-origin-when-cross-origin"
+          - "X-XSS-Protection:1; mode=block"
+      remove:
+        headers:
+          - "Server"
+          - "X-Powered-By"
+
+  # ── Prometheus metrics collection (internal /metrics on Kong admin) ─────────
+  - name: prometheus
+    config:
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+      upstream_health_metrics: true
