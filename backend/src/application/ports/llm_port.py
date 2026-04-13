@@ -1,4 +1,12 @@
-"""ILLMPort — abstract interface for any LLM provider (OpenAI / Anthropic)."""
+# [OWNER: Dev 1 — Data Foundation (P3)]
+"""ILLMPort — abstract interface for LLM text generation (OpenAI / Anthropic).
+
+Embedding is intentionally separated into IEmbeddingPort so the embedding
+model can be swapped independently of the generation model.
+
+Fallback chain (configured in settings.py):
+  GPT-4.1  →  Claude Sonnet 4.6 (if GPT-4.1 exceeds 3 s)  →  vLLM in-house
+"""
 
 from abc import ABC, abstractmethod
 
@@ -16,8 +24,8 @@ class ILLMPort(ABC):
     ) -> tuple[list[LineItem], str]:
         """
         Given a conversation transcript + retrieved context, return:
-          - A list of LineItems
-          - Notes / executive summary for the quotation
+          - A list of LineItems (structured output — no regex parsing)
+          - Executive summary / notes for the quotation document
         """
 
     @abstractmethod
@@ -28,8 +36,4 @@ class ILLMPort(ABC):
         similar_conversations: list[str],
         resources_context: list[str],
     ) -> list[str]:
-        """Return up to 3 reply candidates for the salesman."""
-
-    @abstractmethod
-    async def embed_text(self, text: str) -> list[float]:
-        """Return a vector embedding for ChromaDB upsert."""
+        """Return up to 5 ranked reply candidates for the salesman (P1 pipeline)."""

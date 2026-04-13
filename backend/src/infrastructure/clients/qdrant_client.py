@@ -1,3 +1,4 @@
+# [OWNER: Dev 1 — Data Foundation (P3)]
 """Qdrant vector store client — implements IVectorStorePort.
 
 Collections (3):

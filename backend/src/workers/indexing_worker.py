@@ -1,7 +1,10 @@
-"""Background task: embed a conversation into ChromaDB.
+# [OWNER: Dev 1 — Data Foundation (P3)]
+"""Background task: embed a conversation into Qdrant (P3 indexing pipeline).
 
-Called after a conversation is closed/quoted so it becomes available
-for future similarity matching when generating replies or quotations.
+Called after a conversation is closed/quoted so its transcript becomes
+available for future P1/P2 similarity matching.
+
+Queue: p3-batch  (low priority — does not block the user-facing request)
 """
 
 import asyncio
@@ -10,7 +13,8 @@ import uuid
 import structlog
 
 from src.core.settings import settings
-from src.infrastructure.clients.chromadb_client import ChromaDBClient
+from src.infrastructure.clients.llm_client import LLMClient
+from src.infrastructure.clients.qdrant_client import QdrantVectorClient
 from src.infrastructure.db.repositories.conversation_repository_impl import (
     ConversationRepositoryImpl,
 )
@@ -20,9 +24,10 @@ from src.workers.celery_app import celery_app
 log = structlog.get_logger()
 
 
-@celery_app.task(name="index_conversation", bind=True, max_retries=3)
+@celery_app.task(name="index_conversation", bind=True, max_retries=3, queue="p3-batch")
 def index_conversation(self, conversation_id: str) -> None:
-    """Embed the full transcript of a conversation into ChromaDB."""
+    """Embed the full transcript of a conversation into Qdrant."""
+
     async def _run() -> None:
         async with AsyncSessionLocal() as session:
             repo = ConversationRepositoryImpl(session)
@@ -32,9 +37,15 @@ def index_conversation(self, conversation_id: str) -> None:
                 return
 
             transcript = conv.get_transcript()
-            vs = ChromaDBClient()
+
+            # Embed via LLMClient (text-embedding-3-large, 3072-dim)
+            llm = LLMClient()
+            vector = await llm.embed_text(transcript)
+
+            # Upsert into Qdrant conversations collection
+            vs = QdrantVectorClient()
             await vs.upsert(
-                collection=settings.CHROMA_COLLECTION_CONVERSATIONS,
+                collection=settings.QDRANT_COLLECTION_CONVERSATIONS,
                 doc_id=conversation_id,
                 text=transcript,
                 metadata={
@@ -42,7 +53,9 @@ def index_conversation(self, conversation_id: str) -> None:
                     "agent_id": str(conv.agent_id),
                     "status": conv.status.value,
                 },
+                vector=vector,
             )
+
             conv.vector_id = conversation_id
             await repo.update(conv)
             await session.commit()
@@ -53,3 +66,16 @@ def index_conversation(self, conversation_id: str) -> None:
     except Exception as exc:
         log.error("worker.index_failed", error=str(exc))
         raise self.retry(exc=exc, countdown=60)
+
+
+@celery_app.task(name="re_embed_collection", bind=True, max_retries=2, queue="p3-batch")
+def re_embed_collection(self, collection: str) -> None:
+    """Re-embed an entire Qdrant collection (e.g. after model upgrade).
+
+    Iterates all documents in the named PostgreSQL table, re-embeds, and
+    bulk-upserts into the corresponding Qdrant collection.
+    """
+    log.info("worker.re_embed_started", collection=collection)
+    # Implementation: query all rows with vector_id IS NOT NULL, re-embed, upsert.
+    # Filled in by Dev 1 during sprint 1 P3 work.
+    raise NotImplementedError("re_embed_collection not yet implemented")

@@ -1,3 +1,4 @@
+# [OWNER: Dev 2 — P1 Conversation Engine]
 """Message — a single turn inside a Conversation.
 
 Populated when the salesperson pastes the customer's message into the UI (P1 pipeline).

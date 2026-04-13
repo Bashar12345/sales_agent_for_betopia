@@ -1,0 +1,86 @@
+# CODEOWNERS — Sales Intelligence Agent v3.0
+#
+# GitHub auto-requests a review from the owner when any file in
+# their section is changed in a PR.
+#
+# Replace @dev1 / @dev2 / @dev3 / @dev4 with actual GitHub usernames.
+#
+# Format:  <path-pattern>   <github-username>
+
+# ── Dev 1 — Data Foundation (P3 + Infrastructure) ─────────────────────────────
+backend/src/core/settings.py                                 @dev1
+backend/src/core/exceptions.py                               @dev1
+backend/src/core/logging.py                                  @dev1
+backend/src/infrastructure/db/                               @dev1
+backend/src/infrastructure/clients/qdrant_client.py          @dev1
+backend/src/infrastructure/clients/redis_cache_client.py     @dev1
+backend/src/infrastructure/clients/nats_client.py            @dev1
+backend/src/workers/celery_app.py                            @dev1
+backend/src/workers/indexing_worker.py                       @dev1
+backend/src/api/v1/health.py                                 @dev1
+backend/src/application/ports/vector_store_port.py           @dev1
+backend/src/application/ports/llm_port.py                    @dev1
+backend/deploy/postgres/                                     @dev1
+backend/deploy/qdrant/                                       @dev1
+backend/deploy/docker-compose.yml                            @dev1
+backend/prompts/p3_parsing/                                  @dev1
+backend/prompts/shared/output_schemas/                       @dev1
+
+# ── Dev 2 — P1 Conversation Engine ────────────────────────────────────────────
+backend/src/api/v1/input.py                                  @dev2
+backend/src/api/v1/suggestions.py                            @dev2
+backend/src/api/v1/conversations.py                          @dev2
+backend/src/application/use_cases/suggest_replies.py         @dev2
+backend/src/application/dto/reply_dto.py                     @dev2
+backend/src/application/dto/conversation_dto.py              @dev2
+backend/src/domain/services/reply_service.py                 @dev2
+backend/src/domain/entities/suggestion.py                    @dev2
+backend/src/domain/entities/message.py                       @dev2
+backend/src/domain/entities/conversation.py                  @dev2
+backend/src/domain/repositories/conversation_repository.py   @dev2
+backend/src/infrastructure/clients/llm_client.py             @dev2
+backend/src/infrastructure/clients/vllm_client.py            @dev2
+backend/src/infrastructure/clients/anthropic_client.py       @dev2
+backend/prompts/p1_suggestion/                               @dev2
+backend/prompts/shared/system_persona.yaml                   @dev2
+
+# ── Dev 3 — P2 Requirements Agent ─────────────────────────────────────────────
+backend/src/api/v1/requirements.py                           @dev3
+backend/src/api/v1/proposals.py                              @dev3
+backend/src/api/v1/quotations.py                             @dev3
+backend/src/api/v1/resources.py                              @dev3
+backend/src/application/use_cases/process_fiverr_lead.py     @dev3
+backend/src/application/use_cases/generate_quotation.py      @dev3
+backend/src/application/use_cases/upload_resource.py         @dev3
+backend/src/application/dto/quotation_dto.py                 @dev3
+backend/src/application/dto/resource_dto.py                  @dev3
+backend/src/application/ports/document_generator_port.py     @dev3
+backend/src/domain/services/quotation_service.py             @dev3
+backend/src/domain/entities/requirements_doc.py              @dev3
+backend/src/domain/entities/proposal.py                      @dev3
+backend/src/domain/entities/quotation.py                     @dev3
+backend/src/domain/entities/resource.py                      @dev3
+backend/src/domain/repositories/quotation_repository.py      @dev3
+backend/src/domain/repositories/resource_repository.py       @dev3
+backend/src/infrastructure/clients/document_generator.py     @dev3
+backend/src/workers/quotation_worker.py                      @dev3
+backend/prompts/p2_extraction/                               @dev3
+
+# ── Dev 4 — Frontend, Auth & DevOps ───────────────────────────────────────────
+backend/src/main.py                                          @dev4
+backend/src/core/security.py                                 @dev4
+backend/src/api/v1/router.py                                 @dev4
+backend/src/api/v1/leads.py                                  @dev4
+backend/src/api/v1/replies.py                                @dev4
+backend/src/api/v1/integrations/                             @dev4
+backend/src/application/dto/lead_dto.py                      @dev4
+backend/src/domain/entities/lead.py                          @dev4
+backend/src/domain/entities/fiverr_profile.py                @dev4
+backend/src/domain/entities/sales_agent.py                   @dev4
+backend/src/domain/repositories/lead_repository.py           @dev4
+backend/observability/                                       @dev4
+backend/deploy/k8s/                                          @dev4
+backend/deploy/docker/                                       @dev4
+backend/deploy/nginx/                                        @dev4
+backend/.github/workflows/                                   @dev4
+frontend/                                                    @dev4

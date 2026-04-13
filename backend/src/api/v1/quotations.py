@@ -1,3 +1,4 @@
+# [OWNER: Dev 3 — P2 Requirements Agent]
 """Quotation endpoints — generate, view, update, export to .docx."""
 
 import uuid

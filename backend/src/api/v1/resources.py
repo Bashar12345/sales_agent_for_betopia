@@ -1,3 +1,4 @@
+# [OWNER: Dev 3 — P2 Requirements Agent]
 """Resource endpoints — developer/tester knowledge-base management.
 
 Supports uploading .txt/.pdf/docx files or raw text. Each resource

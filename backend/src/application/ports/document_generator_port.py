@@ -1,3 +1,4 @@
+# [OWNER: Dev 3 — P2 Requirements Agent]
 """IDocumentGeneratorPort — abstract interface for .docx quotation export."""
 
 from abc import ABC, abstractmethod

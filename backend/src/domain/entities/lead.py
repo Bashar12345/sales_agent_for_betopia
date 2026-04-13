@@ -1,3 +1,4 @@
+# [OWNER: Dev 4 — Frontend, Auth & DevOps]
 """Lead — a potential customer sourced from Fiverr (manually entered by salesperson).
 
 No webhook integration — salesperson pastes the customer message into the UI.

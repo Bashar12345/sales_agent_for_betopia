@@ -1,3 +1,4 @@
+# [OWNER: Dev 1 — Data Foundation (P3)]
 """GET /health — liveness + readiness probe for K8s and load balancers."""
 
 from fastapi import APIRouter

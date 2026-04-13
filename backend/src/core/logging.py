@@ -1,3 +1,4 @@
+# [OWNER: Dev 1 — Data Foundation (P3)]
 """Structured JSON logging using structlog.
 
 Call configure_logging() once at app startup (inside main.py).

@@ -1,3 +1,4 @@
+# [OWNER: Dev 3 — P2 Requirements Agent]
 """Background task: generate .docx quotation file.
 
 Triggered after a quotation is created via the API.

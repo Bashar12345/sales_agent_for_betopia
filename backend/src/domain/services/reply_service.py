@@ -1,3 +1,4 @@
+# [OWNER: Dev 2 — P1 Conversation Engine]
 """ReplyService — scores and filters LLM-generated reply candidates.
 
 The LLM port (application layer) returns N raw reply strings.

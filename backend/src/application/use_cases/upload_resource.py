@@ -1,3 +1,4 @@
+# [OWNER: Dev 3 — P2 Requirements Agent]
 """UploadResource — store a document and index it in ChromaDB.
 
 Used by the developer/tester UI page where agents upload price lists,

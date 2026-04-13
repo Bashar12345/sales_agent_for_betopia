@@ -1,3 +1,4 @@
+# [OWNER: Dev 1 — Data Foundation (P3)]
 """NATS JetStream event bus client.
 
 Architecture role: L7 event bus between the three pipelines.

@@ -1,3 +1,4 @@
+# [OWNER: Dev 3 — P2 Requirements Agent]
 """RequirementsDoc — structured requirements extracted by the P2 Requirements Agent.
 
 Input sources (multi-modal):

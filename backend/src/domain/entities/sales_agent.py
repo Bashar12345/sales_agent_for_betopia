@@ -1,3 +1,4 @@
+# [OWNER: Dev 4 — Frontend, Auth & DevOps]
 """SalesAgent — an internal user who handles leads and conversations.
 
 Roles align with v3.0 RBAC model enforced in security.py:

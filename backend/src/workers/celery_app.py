@@ -1,3 +1,4 @@
+# [OWNER: Dev 1 — Data Foundation (P3)]
 """Celery application factory.
 
 Workers handle CPU/IO-heavy background tasks so the HTTP server

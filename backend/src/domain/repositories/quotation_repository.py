@@ -1,3 +1,4 @@
+# [OWNER: Dev 3 — P2 Requirements Agent]
 """Abstract repository interface for Quotations (MySQL-backed)."""
 
 from abc import ABC, abstractmethod

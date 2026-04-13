@@ -1,3 +1,4 @@
+# [OWNER: Dev 4 — Frontend, Auth & DevOps]
 """FastAPI application entry point — Sales Intelligence Agent v3.0.
 
 Startup sequence:

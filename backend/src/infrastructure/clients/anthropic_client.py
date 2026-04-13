@@ -1,3 +1,4 @@
+# [OWNER: Dev 2 — P1 Conversation Engine]
 """Anthropic Claude Sonnet 4.6 client.
 
 Used as the P1 fallback provider when GPT-4.1 exceeds the 3-second timeout,

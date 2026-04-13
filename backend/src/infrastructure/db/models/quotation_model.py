@@ -1,14 +1,14 @@
-"""SQLAlchemy ORM model for Quotation.
+# [OWNER: Dev 1 — Data Foundation (P3)]
+"""SQLAlchemy ORM model for Quotation — PostgreSQL 17.
 
-Line items are stored as JSON in a TEXT column for flexibility;
-no need for a separate table at this stage.
+Line items are stored as JSONB for efficient partial-field querying.
 """
 
 import uuid
 from typing import Any
 
 from sqlalchemy import Enum, Float, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.mysql import CHAR, JSON
+from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.domain.entities.quotation import QuotationStatus
@@ -19,18 +19,20 @@ from src.infrastructure.db.models.mixins import TimestampMixin
 class QuotationModel(TimestampMixin, Base):
     __tablename__ = "quotations"
 
-    id: Mapped[str] = mapped_column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id: Mapped[str] = mapped_column(
+        PGUUID(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
     conversation_id: Mapped[str] = mapped_column(
-        CHAR(36), ForeignKey("conversations.id"), nullable=False, index=True
+        PGUUID(as_uuid=False), ForeignKey("conversations.id"), nullable=False, index=True
     )
     lead_id: Mapped[str] = mapped_column(
-        CHAR(36), ForeignKey("leads.id"), nullable=False, index=True
+        PGUUID(as_uuid=False), ForeignKey("leads.id"), nullable=False, index=True
     )
     agent_id: Mapped[str] = mapped_column(
-        CHAR(36), ForeignKey("sales_agents.id"), nullable=False
+        PGUUID(as_uuid=False), ForeignKey("sales_agents.id"), nullable=False
     )
     title: Mapped[str] = mapped_column(String(512), nullable=False)
-    line_items: Mapped[Any] = mapped_column(JSON, nullable=False, default=list)
+    line_items: Mapped[Any] = mapped_column(JSONB, nullable=False, default=list)
     notes: Mapped[str] = mapped_column(Text, default="")
     total_amount: Mapped[float] = mapped_column(Float, default=0.0)
     currency: Mapped[str] = mapped_column(String(8), default="USD")

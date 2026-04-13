@@ -1,6 +1,12 @@
-"""IVectorStorePort — abstract interface for ChromaDB vector operations."""
+# [OWNER: Dev 1 — Data Foundation (P3)]
+"""IVectorStorePort — abstract interface for Qdrant vector operations.
+
+Qdrant requires pre-computed vectors — callers must embed text first via
+IEmbeddingPort before calling upsert or query_similar.
+"""
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 
 class IVectorStorePort(ABC):
@@ -10,20 +16,23 @@ class IVectorStorePort(ABC):
         collection: str,
         doc_id: str,
         text: str,
-        metadata: dict,
+        metadata: dict[str, Any],
+        vector: list[float],
     ) -> None:
-        """Embed text and upsert into the named collection."""
+        """Upsert a pre-embedded vector into the named collection."""
 
     @abstractmethod
     async def query_similar(
         self,
         collection: str,
-        query_text: str,
+        query_vector: list[float],
         n_results: int = 5,
-    ) -> list[dict]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         """
-        Return up to n_results similar documents.
-        Each dict has keys: id, text, metadata, distance.
+        Return up to n_results semantically similar documents.
+        Each dict has keys: id, score, text, metadata.
+        Optional filters: e.g. {"lead_id": "uuid-str"}.
         """
 
     @abstractmethod

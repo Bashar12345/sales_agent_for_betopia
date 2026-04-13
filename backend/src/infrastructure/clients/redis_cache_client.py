@@ -1,3 +1,4 @@
+# [OWNER: Dev 1 — Data Foundation (P3)]
 """Redis cache client for suggestion and embedding caching.
 
 Cache strategy (v3.0):
