@@ -10,7 +10,7 @@
 | `llm_client.py` | **Niloy** | GPT-4.1 structured outputs + fallback chain |
 | `vllm_client.py` | **Niloy** | In-house vLLM — intent classify + tone validate |
 | `anthropic_client.py` | **Niloy** | Claude Sonnet 4.6 — P1 fallback + P2 enrichment |
-| `document_generator.py` | **Akash** | WeasyPrint + ReportLab PDF renderer |
+| `document_generator.py` | **Asif** | WeasyPrint + ReportLab PDF renderer |
 
 ## db/
 

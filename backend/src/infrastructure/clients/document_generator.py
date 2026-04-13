@@ -1,4 +1,4 @@
-# [OWNER: Akash — P2 Requirements Agent]
+# [OWNER: Asif — P2 Requirements Agent]
 """DocumentGenerator — implements IDocumentGeneratorPort using python-docx.
 
 Generates a formatted .docx quotation file and saves it to DOC_OUTPUT_DIR.

@@ -1,4 +1,4 @@
-# [OWNER: Akash — P2 Requirements Agent]
+# [OWNER: Asif — P2 Requirements Agent]
 """Quotation endpoints — generate, view, update, export to .docx."""
 
 import uuid

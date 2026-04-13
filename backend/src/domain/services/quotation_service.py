@@ -1,4 +1,4 @@
-# [OWNER: Akash — P2 Requirements Agent]
+# [OWNER: Asif — P2 Requirements Agent]
 """QuotationService — pure business logic for building a Quotation.
 
 No LLM calls here. LLM integration lives in the application layer

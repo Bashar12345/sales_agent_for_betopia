@@ -193,7 +193,7 @@ Use Tenacity circuit breaker per provider. All calls must be `async def`.
 ### Contracts you publish to team
 
 ```python
-# Celery task signature — Akash & Bashar can enqueue P1 tasks
+# Celery task signature — Asif & Bashar can enqueue P1 tasks
 run_p1_pipeline.apply_async(
     args=[message_id],
     queue="p1-high",
@@ -210,7 +210,7 @@ run_p1_pipeline.apply_async(
 
 ---
 
-## Akash — P2: Requirements Engineering Agent
+## Asif — P2: Requirements Engineering Agent
 
 **Owns:** File ingestion (PDF/DOCX/PPTX/images/audio/email/XLS), text extraction,
 GPT-4.1 extraction with structured outputs, gap detection, Claude Sonnet 4.6 RAG
@@ -477,7 +477,7 @@ async def get_metrics(
 |---|---|---|
 | `docker-compose.yml` (postgres running) | Zohra | Day 3 |
 | `POST /api/v1/input/message` working | Niloy | Day 5 |
-| `POST /api/v1/requirements/ingest` working | Akash | Day 5 |
+| `POST /api/v1/requirements/ingest` working | Asif | Day 5 |
 
 ### Delivers to team by Day 2 (hard dependency)
 
@@ -509,7 +509,7 @@ file.uploaded            { lead_id, s3_uri, mime_type, size_bytes }
 main              ← protected, deploys to staging
 feature/zohra-*    ← Zohra branches
 feature/niloy-*    ← Niloy branches
-feature/akash-*    ← Akash branches
+feature/asif-*    ← Asif branches
 feature/bashar-*    ← Bashar branches
 ```
 
@@ -547,7 +547,7 @@ SENTRY_DSN=
 
 ## Day-by-Day Milestones
 
-| Day | Zohra | Niloy | Akash | Bashar |
+| Day | Zohra | Niloy | Asif | Bashar |
 |---|---|---|---|---|
 | 1 | Port interfaces committed. Docker Compose drafted. | Read architecture §3. Stub use case. | Read architecture §4. Stub extractors. | JWT middleware committed. Next.js app running. |
 | 2 | DB migrations runnable. Redis+Qdrant+NATS up. | Intent classifier wired (vLLM). Embedding cache working. | File upload + ClamAV scan working. | Auth endpoints live. Basic lead list page. |
@@ -564,9 +564,9 @@ SENTRY_DSN=
 
 ```
 Bashar (Auth)  ────────────────────────────────► All devs (import require_auth)
-Zohra (Ports) ────────────────────────────────► Niloy + Akash (implement against VectorStorePort)
-Zohra (docker-compose) ───────────────────────► Niloy + Akash (local dev environment)
-Niloy (anthropic_client.py) ──────────────────► Akash (reuse for Claude enrichment agent)
+Zohra (Ports) ────────────────────────────────► Niloy + Asif (implement against VectorStorePort)
+Zohra (docker-compose) ───────────────────────► Niloy + Asif (local dev environment)
+Niloy (anthropic_client.py) ──────────────────► Asif (reuse for Claude enrichment agent)
 Niloy (WebSocket push) ───────────────────────► Bashar (frontend consumes suggestion stream)
-Akash (requirements approval event) ──────────► Bashar (frontend approval gate UI)
+Asif (requirements approval event) ──────────► Bashar (frontend approval gate UI)
 ```
