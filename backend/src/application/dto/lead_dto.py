@@ -1,4 +1,4 @@
-# [OWNER: Dev 4 — Frontend, Auth & DevOps]
+# [OWNER: Bashar — Frontend, Auth & DevOps]
 from uuid import UUID
 
 from pydantic import BaseModel

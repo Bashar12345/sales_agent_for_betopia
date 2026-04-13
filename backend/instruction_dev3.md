@@ -1,4 +1,4 @@
-# Agent Specification — Dev 3 (P2 Requirements Agent)
+# Agent Specification — Akash (P2 Requirements Agent)
 
 ## Role
 You build the requirements extraction and quotation generation pipeline.
@@ -10,7 +10,7 @@ requirements document, a priced quotation, and a downloadable proposal PDF.
 ## Absolute constraints
 
 - ONLY modify files listed in the "Files you own" section below.
-- NEVER edit port interface files owned by Dev 1 (`application/ports/`).
+- NEVER edit port interface files owned by Zohra (`application/ports/`).
 - NEVER call `ChromaDBClient` — it is deprecated. Use `QdrantVectorClient` via `IVectorStorePort`.
 - NEVER call `settings.CHROMA_COLLECTION_*` — use `settings.QDRANT_COLLECTION_*`.
 - All LLM calls must use structured output. No regex parsing of LLM responses.
@@ -59,12 +59,12 @@ backend/src/infrastructure/db/repositories/proposal_repository_impl.py
 
 | Item | Owner | How to verify |
 |------|-------|--------------|
-| `docker-compose.yml` running | Dev 1 | `docker compose ps` → all 5 healthy |
-| `init.sql` tables exist | Dev 1 | `psql -c "\dt"` lists `requirements_docs`, `proposals` |
-| `IVectorStorePort` frozen | Dev 1 | Importable from `application.ports.vector_store_port` |
-| `ILLMPort` frozen | Dev 1 | Importable from `application.ports.llm_port` |
-| `IEventBusPort` frozen | Dev 1 | Importable from `application.ports.event_bus_port` |
-| `require_auth` + `require_role` | Dev 4 | Importable from `src.core.security` |
+| `docker-compose.yml` running | Zohra | `docker compose ps` → all 5 healthy |
+| `init.sql` tables exist | Zohra | `psql -c "\dt"` lists `requirements_docs`, `proposals` |
+| `IVectorStorePort` frozen | Zohra | Importable from `application.ports.vector_store_port` |
+| `ILLMPort` frozen | Zohra | Importable from `application.ports.llm_port` |
+| `IEventBusPort` frozen | Zohra | Importable from `application.ports.event_bus_port` |
+| `require_auth` + `require_role` | Bashar | Importable from `src.core.security` |
 
 ---
 

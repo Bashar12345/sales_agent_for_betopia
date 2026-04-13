@@ -1,4 +1,4 @@
-# [OWNER: Dev 1 — Data Foundation (P3)]
+# [OWNER: Zohra — Data Foundation (P3)]
 """MySQL implementation of IResourceRepository."""
 
 import uuid

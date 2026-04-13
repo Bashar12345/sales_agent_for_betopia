@@ -1,4 +1,4 @@
-# [OWNER: Dev 1 — Data Foundation (P3)]
+# [OWNER: Zohra — Data Foundation (P3)]
 """IVectorStorePort — abstract interface for Qdrant vector operations.
 
 Qdrant requires pre-computed vectors — callers must embed text first via

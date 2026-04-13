@@ -1,4 +1,4 @@
-# [OWNER: Dev 3 — P2 Requirements Agent]
+# [OWNER: Akash — P2 Requirements Agent]
 """Abstract repository interface for Resources (MySQL-backed)."""
 
 from abc import ABC, abstractmethod

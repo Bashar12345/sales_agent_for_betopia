@@ -1,4 +1,4 @@
-# [OWNER: Dev 1 — Data Foundation (P3)]
+# [OWNER: Zohra — Data Foundation (P3)]
 """Async SQLAlchemy session factory + FastAPI dependency.
 
 Driver: asyncpg (PostgreSQL 17).

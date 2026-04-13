@@ -1,4 +1,4 @@
-# [OWNER: Dev 4 — Frontend, Auth & DevOps]
+# [OWNER: Bashar — Frontend, Auth & DevOps]
 """Reply-suggestion endpoint — DEPRECATED in v3.0.
 
 POST /api/v1/replies/suggest is kept for backwards-compatibility.

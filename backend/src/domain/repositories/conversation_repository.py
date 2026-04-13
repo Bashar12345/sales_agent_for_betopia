@@ -1,4 +1,4 @@
-# [OWNER: Dev 2 — P1 Conversation Engine]
+# [OWNER: Niloy — P1 Conversation Engine]
 """Abstract repository interface for Conversations (MySQL-backed)."""
 
 from abc import ABC, abstractmethod

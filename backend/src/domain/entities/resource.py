@@ -1,4 +1,4 @@
-# [OWNER: Dev 3 — P2 Requirements Agent]
+# [OWNER: Akash — P2 Requirements Agent]
 """Resource — a document uploaded by a developer/agent for context.
 
 Resources (price lists, service catalogues, past proposals) are embedded

@@ -1,4 +1,4 @@
-# [OWNER: Dev 4 — Frontend, Auth & DevOps]
+# [OWNER: Bashar — Frontend, Auth & DevOps]
 """JWT RS256 token helpers, password hashing, and RBAC role enforcement.
 
 Uses asymmetric RS256 (RSA-2048) — private key signs, public key verifies.

@@ -1,4 +1,4 @@
-# [OWNER: Dev 3 — P2 Requirements Agent]
+# [OWNER: Akash — P2 Requirements Agent]
 """GenerateQuotation — core AI flow: conversation → quotation.
 
 Steps:

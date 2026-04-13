@@ -1,4 +1,4 @@
-# [OWNER: Dev 4 — Frontend, Auth & DevOps]
+# [OWNER: Bashar — Frontend, Auth & DevOps]
 """Abstract repository interface for Leads (MySQL-backed)."""
 
 from abc import ABC, abstractmethod

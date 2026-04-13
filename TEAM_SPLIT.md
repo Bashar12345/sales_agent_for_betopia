@@ -6,7 +6,7 @@
 
 ---
 
-## Dev 1 — Data Foundation (P3 + Infrastructure)
+## Zohra — Data Foundation (P3 + Infrastructure)
 
 **Owns:** PostgreSQL schema, Qdrant collections, Redis, NATS event bus, Debezium CDC,
 embedding pipeline, Docker Compose, DB migrations, health endpoints.
@@ -76,7 +76,7 @@ class VectorStorePort(Protocol):
                      k: int, filters: dict) -> list[SearchResult]: ...
     async def delete(self, collection: str, ids: list[UUID]) -> None: ...
 
-# src/application/ports/llm_port.py  — DEV 1 writes the interface; Dev 2/3 implement it
+# src/application/ports/llm_port.py  — DEV 1 writes the interface; Niloy/3 implement it
 class EmbeddingPort(Protocol):
     async def embed(self, texts: list[str]) -> list[list[float]]: ...
 
@@ -98,7 +98,7 @@ class EventBusPort(Protocol):
 
 ---
 
-## Dev 2 — P1: Conversation Suggestion Engine
+## Niloy — P1: Conversation Suggestion Engine
 
 **Owns:** Intent classification (vLLM), embedding lookup, Qdrant conversation search,
 GPT-4.1 suggestion ranking, tone validation, WebSocket/SSE delivery, Redis suggestion
@@ -184,16 +184,16 @@ Use Tenacity circuit breaker per provider. All calls must be `async def`.
 
 | Need | From | Available by |
 |---|---|---|
-| `VectorStorePort` interface | Dev 1 | Day 1 |
-| `EmbeddingPort` interface | Dev 1 | Day 1 |
-| `EventBusPort` interface | Dev 1 | Day 1 |
-| `docker-compose.yml` (redis + qdrant running) | Dev 1 | Day 3 |
-| JWT auth middleware | Dev 4 | Day 2 |
+| `VectorStorePort` interface | Zohra | Day 1 |
+| `EmbeddingPort` interface | Zohra | Day 1 |
+| `EventBusPort` interface | Zohra | Day 1 |
+| `docker-compose.yml` (redis + qdrant running) | Zohra | Day 3 |
+| JWT auth middleware | Bashar | Day 2 |
 
 ### Contracts you publish to team
 
 ```python
-# Celery task signature — Dev 3 & Dev 4 can enqueue P1 tasks
+# Celery task signature — Akash & Bashar can enqueue P1 tasks
 run_p1_pipeline.apply_async(
     args=[message_id],
     queue="p1-high",
@@ -206,11 +206,11 @@ run_p1_pipeline.apply_async(
 - `POST /api/v1/input/message` returns 202 + task_id
 - Celery worker processes P1 pipeline end-to-end
 - WebSocket push working in local dev
-- Suggestions visible in browser (basic UI from Dev 4)
+- Suggestions visible in browser (basic UI from Bashar)
 
 ---
 
-## Dev 3 — P2: Requirements Engineering Agent
+## Akash — P2: Requirements Engineering Agent
 
 **Owns:** File ingestion (PDF/DOCX/PPTX/images/audio/email/XLS), text extraction,
 GPT-4.1 extraction with structured outputs, gap detection, Claude Sonnet 4.6 RAG
@@ -277,7 +277,7 @@ backend/prompts/shared/
 | P2-09 | Budget & timeline estimator | GPT-4.1 → price_min/max/recommended, timeline_days, milestone_breakdown[], confidence_score | flag <0.7 |
 | P2-10 | Resource matching | Match against internal developer DB — experience, availability, team composition | |
 | P2-11 | Requirements doc renderer | HTML/JSON → Executive Summary, Feature List, Tech Stack, Budget, Timeline, Flagged Questions | |
-| P2-12 | Human review gate | Editable UI (Dev 4 builds UI), APPROVAL/REVISION, diff log, publish requirement.approved | |
+| P2-12 | Human review gate | Editable UI (Bashar builds UI), APPROVAL/REVISION, diff log, publish requirement.approved | |
 
 ### RequirementsSchema (implement exactly)
 
@@ -312,12 +312,12 @@ class RequirementsSchema(BaseModel):
 
 | Need | From | Available by |
 |---|---|---|
-| `VectorStorePort` interface | Dev 1 | Day 1 |
-| `EmbeddingPort` interface | Dev 1 | Day 1 |
-| `EventBusPort` interface | Dev 1 | Day 1 |
-| `docker-compose.yml` running | Dev 1 | Day 3 |
-| JWT auth middleware | Dev 4 | Day 2 |
-| `anthropic_client.py` (Claude Sonnet 4.6) | Dev 2 | Day 4 |
+| `VectorStorePort` interface | Zohra | Day 1 |
+| `EmbeddingPort` interface | Zohra | Day 1 |
+| `EventBusPort` interface | Zohra | Day 1 |
+| `docker-compose.yml` running | Zohra | Day 3 |
+| JWT auth middleware | Bashar | Day 2 |
+| `anthropic_client.py` (Claude Sonnet 4.6) | Niloy | Day 4 |
 
 ### Delivers by Day 8
 
@@ -328,7 +328,7 @@ class RequirementsSchema(BaseModel):
 
 ---
 
-## Dev 4 — Frontend + Auth + Admin + Observability + DevOps
+## Bashar — Frontend + Auth + Admin + Observability + DevOps
 
 **Owns:** Next.js 15 Sales UI, JWT auth (RS256), WebSocket/SSE client, suggestion
 display, requirements editor, admin dashboard, Vector DB management portal,
@@ -443,7 +443,7 @@ backend/deploy/
 - OpenTelemetry auto-instrumentation on all FastAPI apps
 - Sentry integration (all services)
 
-**DevOps (Day 1–3, shared with Dev 1)**
+**DevOps (Day 1–3, shared with Zohra)**
 - K8s manifests for all services
 - KEDA ScaledObjects for P1/P2/P3 workers
 - GitHub Actions CI: `ruff` lint + `mypy` + `pytest` + prompt eval suite
@@ -475,9 +475,9 @@ async def get_metrics(
 
 | Need | From | Available by |
 |---|---|---|
-| `docker-compose.yml` (postgres running) | Dev 1 | Day 3 |
-| `POST /api/v1/input/message` working | Dev 2 | Day 5 |
-| `POST /api/v1/requirements/ingest` working | Dev 3 | Day 5 |
+| `docker-compose.yml` (postgres running) | Zohra | Day 3 |
+| `POST /api/v1/input/message` working | Niloy | Day 5 |
+| `POST /api/v1/requirements/ingest` working | Akash | Day 5 |
 
 ### Delivers to team by Day 2 (hard dependency)
 
@@ -489,7 +489,7 @@ async def get_metrics(
 
 ## Shared Contracts — Agree on Day 1
 
-These are the interfaces all 4 devs share. Dev 1 writes the interfaces; all others implement or consume them.
+These are the interfaces all 4 devs share. Zohra writes the interfaces; all others implement or consume them.
 
 ### Event types (NATS)
 
@@ -507,10 +507,10 @@ file.uploaded            { lead_id, s3_uri, mime_type, size_bytes }
 
 ```
 main              ← protected, deploys to staging
-feature/dev1-*    ← Dev 1 branches
-feature/dev2-*    ← Dev 2 branches
-feature/dev3-*    ← Dev 3 branches
-feature/dev4-*    ← Dev 4 branches
+feature/dev1-*    ← Zohra branches
+feature/dev2-*    ← Niloy branches
+feature/dev3-*    ← Akash branches
+feature/dev4-*    ← Bashar branches
 ```
 
 PR into `main` requires: CI green + 1 review from any other dev.
@@ -547,7 +547,7 @@ SENTRY_DSN=
 
 ## Day-by-Day Milestones
 
-| Day | Dev 1 | Dev 2 | Dev 3 | Dev 4 |
+| Day | Zohra | Niloy | Akash | Bashar |
 |---|---|---|---|---|
 | 1 | Port interfaces committed. Docker Compose drafted. | Read architecture §3. Stub use case. | Read architecture §4. Stub extractors. | JWT middleware committed. Next.js app running. |
 | 2 | DB migrations runnable. Redis+Qdrant+NATS up. | Intent classifier wired (vLLM). Embedding cache working. | File upload + ClamAV scan working. | Auth endpoints live. Basic lead list page. |
@@ -563,10 +563,10 @@ SENTRY_DSN=
 ## Integration Points
 
 ```
-Dev 4 (Auth)  ────────────────────────────────► All devs (import require_auth)
-Dev 1 (Ports) ────────────────────────────────► Dev 2 + Dev 3 (implement against VectorStorePort)
-Dev 1 (docker-compose) ───────────────────────► Dev 2 + Dev 3 (local dev environment)
-Dev 2 (anthropic_client.py) ──────────────────► Dev 3 (reuse for Claude enrichment agent)
-Dev 2 (WebSocket push) ───────────────────────► Dev 4 (frontend consumes suggestion stream)
-Dev 3 (requirements approval event) ──────────► Dev 4 (frontend approval gate UI)
+Bashar (Auth)  ────────────────────────────────► All devs (import require_auth)
+Zohra (Ports) ────────────────────────────────► Niloy + Akash (implement against VectorStorePort)
+Zohra (docker-compose) ───────────────────────► Niloy + Akash (local dev environment)
+Niloy (anthropic_client.py) ──────────────────► Akash (reuse for Claude enrichment agent)
+Niloy (WebSocket push) ───────────────────────► Bashar (frontend consumes suggestion stream)
+Akash (requirements approval event) ──────────► Bashar (frontend approval gate UI)
 ```
