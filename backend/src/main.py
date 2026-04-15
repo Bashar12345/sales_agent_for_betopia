@@ -14,6 +14,7 @@ Shutdown: drain NATS, dispose PostgreSQL connection pool.
 """
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import AsyncGenerator
 
 import structlog
@@ -115,7 +116,8 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 app.include_router(v1_router)
 
 # ── Test Console UI (dev only) ────────────────────────────────────────────────
-app.mount("/ui", StaticFiles(directory="static", html=True), name="ui")
+_FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
+app.mount("/ui", StaticFiles(directory=str(_FRONTEND_DIR), html=True), name="ui")
 
 
 # ── Health check (used by Docker healthcheck + Kubernetes liveness probe) ─────

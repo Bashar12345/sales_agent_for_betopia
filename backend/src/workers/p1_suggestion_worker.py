@@ -154,26 +154,13 @@ def generate_p1_suggestions(
             generated_by=suggestions[0].get("generated_by") if suggestions else "unknown",
         )
 
-        # ── 7. Tone validation per suggestion (advisory — never blocks) ────────
-        for suggestion in suggestions:
-            try:
-                tone_result = await vllm.validate_tone(suggestion.get("full_text", ""))
-                if not tone_result.get("appropriate", True):
-                    log.warning(
-                        "p1.tone_flagged",
-                        rank=suggestion.get("rank"),
-                        reason=tone_result.get("reason"),
-                    )
-            except Exception:
-                pass  # tone validation failure is never a blocker
-
         # ── 8. DB persistence ─────────────────────────────────────────────────
         from src.infrastructure.db.repositories.suggestion_repository_impl import (
             SuggestionRepositoryImpl,
         )
         async with AsyncSessionLocal() as session:
             suggestion_repo = SuggestionRepositoryImpl(session)
-            await suggestion_repo.bulk_create(
+            db_models = await suggestion_repo.bulk_create(
                 suggestions=suggestions,
                 message_id=uuid.UUID(message_id),
                 conversation_id=uuid.UUID(conversation_id),
@@ -182,11 +169,27 @@ def generate_p1_suggestions(
             )
             await session.commit()
 
+        # Build cache payload from DB models (includes DB-assigned UUIDs)
+        cached_suggestions = [
+            {
+                "id": m.id,
+                "rank": m.rank,
+                "strategy": m.strategy,
+                "tone": m.tone,
+                "preview_text": m.preview_text,
+                "full_text": m.full_text,
+                "conversion_signal": m.conversion_signal,
+                "generated_by": m.generated_by,
+                "intent_label": m.intent_label,
+            }
+            for m in db_models
+        ]
+
         # ── 9. Redis: cache by lead_id for polling + WebSocket ─────────────────
         # "latest" key → GET /suggestions/{lead_id} polling (no message_id needed)
         # message_id key → precise per-message lookup
-        await cache.set_suggestions(lead_id, "latest", suggestions)
-        await cache.set_suggestions(lead_id, message_id, suggestions)
+        await cache.set_suggestions(lead_id, "latest", cached_suggestions)
+        await cache.set_suggestions(lead_id, message_id, cached_suggestions)
 
         # ── 10. NATS: notify WebSocket subscribers ─────────────────────────────
         nats = NATSClient()
@@ -211,8 +214,28 @@ def generate_p1_suggestions(
             except Exception:
                 pass
 
-        await cache.close()
         log.info("p1.completed", lead_id=lead_id, suggestions=len(suggestions))
+
+        # ── 7. Tone validation — runs AFTER salesperson is already unblocked ───
+        # Dispatched in parallel via asyncio.gather so all 5 calls are in-flight
+        # simultaneously. On CPU Ollama the server queues them; on a GPU vLLM
+        # server they run truly in parallel (~1-2s total). Either way this never
+        # delays the suggestion response to the UI.
+        tone_results = await asyncio.gather(
+            *[vllm.validate_tone(s.get("full_text", "")) for s in suggestions],
+            return_exceptions=True,
+        )
+        for suggestion, tone_result in zip(suggestions, tone_results):
+            if isinstance(tone_result, Exception):
+                continue  # validate_tone() already logged the error internally
+            if not tone_result.get("appropriate", True):
+                log.warning(
+                    "p1.tone_flagged",
+                    rank=suggestion.get("rank"),
+                    reason=tone_result.get("reason"),
+                )
+
+        await cache.close()
 
     from src.infrastructure.db.session import engine as _engine  # noqa: PLC0415
 

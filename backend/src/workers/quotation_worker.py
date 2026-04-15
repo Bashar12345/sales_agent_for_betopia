@@ -42,8 +42,20 @@ def generate_quotation_doc(self, quotation_id: str, lead_name: str, agent_name: 
             log.info("worker.doc_generated", path=doc_path)
             return doc_path
 
+    from src.infrastructure.db.session import engine as _engine  # noqa: PLC0415
+
+    result: str = ""
+
+    async def _run_and_dispose() -> None:
+        nonlocal result
+        try:
+            result = await _run()
+        finally:
+            await _engine.dispose()
+
     try:
-        return asyncio.run(_run())
+        asyncio.run(_run_and_dispose())
+        return result
     except Exception as exc:
         log.error("worker.doc_failed", error=str(exc))
         raise self.retry(exc=exc, countdown=30)

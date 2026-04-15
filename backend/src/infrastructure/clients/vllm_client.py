@@ -41,8 +41,10 @@ _TONE_SYSTEM = (
 class VLLMClient:
     def __init__(self) -> None:
         self._client = AsyncOpenAI(
-            base_url=settings.VLLM_BASE_URL + "/v1",
+            base_url=settings.VLLM_BASE_URL.rstrip("/") + "/v1",
             api_key="not-needed",   # vLLM local server doesn't need an API key
+            max_retries=0,          # fail fast — no retries when vLLM is not running
+            timeout=settings.VLLM_TIMEOUT,  # configurable — default 60s for CPU Mistral
         )
 
     # ── Intent classification ─────────────────────────────────────────────────

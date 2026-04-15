@@ -12,7 +12,7 @@ dev:
 	uvicorn src.main:app --host 0.0.0.0 --port 8080 --reload
 
 worker:
-	celery -A src.workers.celery_app worker --loglevel=info --pool=solo -Q p1,celery
+	celery -A src.workers.celery_app worker --loglevel=info --pool=solo -Q p1,celery,p3-batch
 
 beat:
 	celery -A src.workers.celery_app beat --loglevel=info

@@ -7,6 +7,11 @@ The seeder extracts (customer_message, agent_reply) pairs, embeds the
 customer messages, and upserts them into the Qdrant 'conversations'
 collection as the P1 knowledge base.
 
+Two extraction strategies (tried in order):
+  1. pdfplumber — fast text extraction for text-based PDFs
+  2. GPT-4.1 Vision — renders pages to PNG and sends to vision API for
+     image-based PDFs (Fiverr screenshot exports are always image-based)
+
 Usage (from backend/ directory):
     python scripts/seed_conversations.py
 
@@ -14,10 +19,11 @@ Requirements:
     - Qdrant running (make vm3-up or docker-compose.server.yml up)
     - Redis running
     - OPENAI_API_KEY set in .env
-    - pdfplumber installed (already in pyproject.toml)
+    - pdfplumber + PyMuPDF installed (already in pyproject.toml)
 """
 
 import asyncio
+import base64
 import json
 import sys
 import uuid
@@ -29,6 +35,7 @@ import structlog
 # Add backend/ to path so `from src.*` imports resolve when running as script
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import fitz  # PyMuPDF  # noqa: E402
 import pdfplumber  # noqa: E402
 from openai import AsyncOpenAI  # noqa: E402
 
@@ -41,6 +48,9 @@ log = structlog.get_logger()
 
 # conversations/ folder is at the repo root (one level above backend/)
 CONVERSATIONS_DIR = Path(__file__).parent.parent.parent / "conversations"
+
+# Max PDF pages to send to vision API (caps token cost per file)
+_MAX_VISION_PAGES = 6
 
 # ── GPT-4.1 structured output tool for parsing raw chat text ─────────────────
 
@@ -132,12 +142,19 @@ Rules:
 """
 
 
-# ── PDF text extraction ───────────────────────────────────────────────────────
+# ── PDF extraction: text path ─────────────────────────────────────────────────
 
 def extract_pdf_text(pdf_path: Path) -> str:
-    """Extract all text from a PDF using pdfplumber."""
+    """Extract selectable text from a PDF using pdfplumber.
+
+    Reads raw bytes first so Windows path quirks (parentheses, spaces)
+    never reach pdfplumber's internal file resolver.
+    Returns empty string for image-based (scanned/screenshot) PDFs.
+    """
     pages: list[str] = []
-    with pdfplumber.open(str(pdf_path)) as pdf:
+    pdf_bytes = pdf_path.read_bytes()
+    import io  # noqa: PLC0415
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
         for page in pdf.pages:
             text = page.extract_text()
             if text and text.strip():
@@ -145,13 +162,33 @@ def extract_pdf_text(pdf_path: Path) -> str:
     return "\n\n".join(pages)
 
 
+# ── PDF extraction: vision path ───────────────────────────────────────────────
+
+def render_pdf_pages(pdf_path: Path, max_pages: int = _MAX_VISION_PAGES) -> list[str]:
+    """Render PDF pages to base64-encoded PNG strings for the vision API.
+
+    Loads from bytes so Windows path quirks (parentheses, spaces) are bypassed.
+    Uses a 2× DPI scale so text in screenshots is legible to GPT-4.1 Vision.
+    """
+    pdf_bytes = pdf_path.read_bytes()
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    images: list[str] = []
+    scale = fitz.Matrix(2.0, 2.0)  # 144 DPI — sharp enough for chat text
+    for page_num in range(min(len(doc), max_pages)):
+        pix = doc[page_num].get_pixmap(matrix=scale, alpha=False)
+        png_bytes = pix.tobytes("png")
+        images.append(base64.b64encode(png_bytes).decode())
+    doc.close()
+    return images
+
+
 # ── LLM-based conversation parsing ───────────────────────────────────────────
 
-async def parse_conversation(raw_text: str, openai_client: AsyncOpenAI) -> dict[str, Any]:
+async def parse_conversation_text(
+    raw_text: str, openai_client: AsyncOpenAI
+) -> dict[str, Any]:
     """Use GPT-4.1 structured output to parse raw chat text into turns."""
-    # Limit to 12,000 chars to stay well within token budget
     truncated = raw_text[:12_000]
-
     response = await openai_client.chat.completions.create(
         model=settings.LLM_PRIMARY_MODEL,
         messages=[
@@ -164,6 +201,76 @@ async def parse_conversation(raw_text: str, openai_client: AsyncOpenAI) -> dict[
     )
     raw_args = response.choices[0].message.tool_calls[0].function.arguments
     return json.loads(raw_args)
+
+
+async def parse_conversation_vision(
+    page_images: list[str],
+    openai_client: AsyncOpenAI,
+    max_tokens: int = 4096,
+) -> dict[str, Any]:
+    """Use GPT-4.1 Vision to parse a screenshot-based PDF directly.
+
+    Sends each rendered page as a base64 PNG in the user message content array.
+    On JSON truncation (output token limit hit), retries with half the pages
+    so at least a partial set of conversation pairs is extracted.
+    """
+    content: list[dict[str, Any]] = [
+        {
+            "type": "text",
+            "text": "Parse this Fiverr conversation from the screenshots below:",
+        }
+    ]
+    for b64 in page_images:
+        content.append(
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/png;base64,{b64}",
+                    "detail": "high",  # high detail for small chat text
+                },
+            }
+        )
+
+    response = await openai_client.chat.completions.create(
+        model=settings.LLM_PRIMARY_MODEL,
+        messages=[
+            {"role": "system", "content": _PARSE_SYSTEM},
+            {"role": "user", "content": content},
+        ],
+        tools=[_PARSE_TOOL],
+        tool_choice={"type": "function", "function": {"name": "parse_conversation"}},
+        temperature=0.0,
+        max_tokens=max_tokens,
+    )
+    raw_args = response.choices[0].message.tool_calls[0].function.arguments
+    try:
+        return json.loads(raw_args)
+    except json.JSONDecodeError:
+        half = max(1, len(page_images) // 2)
+        if half < len(page_images):
+            # First try: halve the pages at the same token budget
+            log.warning(
+                "seeder.vision_json_truncated",
+                pages_sent=len(page_images),
+                retrying_with=half,
+            )
+            return await parse_conversation_vision(
+                page_images[:half], openai_client, max_tokens=max_tokens
+            )
+        if max_tokens < 16384:
+            # Already at 1 page — content is large (e.g. Unicode/emoji heavy).
+            # Double the token budget and retry.
+            new_limit = min(max_tokens * 2, 16384)
+            log.warning(
+                "seeder.vision_token_limit_increase",
+                pages_sent=len(page_images),
+                old_max_tokens=max_tokens,
+                new_max_tokens=new_limit,
+            )
+            return await parse_conversation_vision(
+                page_images, openai_client, max_tokens=new_limit
+            )
+        raise
 
 
 # ── Turn pairing ──────────────────────────────────────────────────────────────
@@ -199,16 +306,28 @@ async def seed_pdf(
 ) -> int:
     """Parse one PDF and upsert all (customer, agent) pairs to Qdrant.
 
+    Tries pdfplumber text extraction first; falls back to GPT-4.1 Vision
+    for image-based screenshot PDFs (the typical Fiverr export format).
+
     Returns the number of documents upserted.
     """
     log.info("seeder.processing", file=pdf_path.name)
 
+    # ── Strategy 1: text extraction ───────────────────────────────────────────
     raw_text = extract_pdf_text(pdf_path)
-    if not raw_text.strip():
-        log.warning("seeder.empty_pdf", file=pdf_path.name)
-        return 0
+    if raw_text.strip():
+        log.info("seeder.text_extraction", file=pdf_path.name, chars=len(raw_text))
+        parsed = await parse_conversation_text(raw_text, openai_client)
+    else:
+        # ── Strategy 2: GPT-4.1 Vision (image-based PDF) ─────────────────────
+        log.info("seeder.vision_fallback", file=pdf_path.name)
+        page_images = render_pdf_pages(pdf_path)
+        if not page_images:
+            log.warning("seeder.empty_pdf", file=pdf_path.name)
+            return 0
+        log.info("seeder.vision_sending", file=pdf_path.name, pages=len(page_images))
+        parsed = await parse_conversation_vision(page_images, openai_client)
 
-    parsed = await parse_conversation(raw_text, openai_client)
     meta = parsed.get("conversation_metadata", {})
     turns = parsed.get("turns", [])
 

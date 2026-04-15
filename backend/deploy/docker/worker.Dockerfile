@@ -56,4 +56,4 @@ CMD ["celery", "-A", "src.workers.celery_app", "worker", \
      "--loglevel=info", \
      "--concurrency=4", \
      "--max-tasks-per-child=100", \
-     "-Q", "p1,celery"]
+     "-Q", "p1,celery,p3-batch"]

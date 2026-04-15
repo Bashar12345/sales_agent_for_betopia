@@ -85,6 +85,7 @@ class Settings(BaseSettings):
     # ── LLM — In-house vLLM ───────────────────────────────────────────────────
     VLLM_BASE_URL: str = "http://localhost:8080"
     VLLM_MODEL: str = "mistral-7b-instruct"    # intent + tone validation
+    VLLM_TIMEOUT: float = 60.0                 # CPU inference (Mistral 7B) can take 10-30s
 
     # ── P1 suggestion configuration ───────────────────────────────────────────
     SUGGESTION_COUNT: int = 5

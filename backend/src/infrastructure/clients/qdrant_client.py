@@ -64,6 +64,7 @@ class QdrantVectorClient(IVectorStorePort):
             host=settings.QDRANT_HOST,
             port=settings.QDRANT_PORT,
             api_key=settings.QDRANT_API_KEY or None,
+            https=False,        # local Qdrant has no TLS; cloud sets this to True
             prefer_grpc=False,  # REST only for local dev (gRPC on port 6334 not exposed)
             check_compatibility=False,
         )

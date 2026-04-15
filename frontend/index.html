@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Agent — P1 Test Console</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2d3148;
+      --accent: #5865f2;
+      --accent-h: #4752c4;
+      --green: #23d160;
+      --yellow: #ffdd57;
+      --red: #ff3860;
+      --text: #e2e8f0;
+      --muted: #718096;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; padding: 20px; }
+    .container { max-width: 1120px; margin: 0 auto; }
+
+    /* Header */
+    header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 24px; padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 { font-size: 1.35rem; font-weight: 700; }
+    .badge { background: var(--accent); color: #fff; padding: 2px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 700; }
+    .status { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; margin-left: auto; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+    .dot.on { background: var(--green); }
+    .dot.off { background: var(--red); }
+
+    /* Cards */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+    .card-title { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .step { width: 20px; height: 20px; background: var(--accent); color: #fff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700; flex-shrink: 0; }
+
+    /* Grid */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    @media (max-width: 700px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+
+    /* Form */
+    label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
+    input, textarea, select {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); padding: 8px 12px;
+      font-family: inherit; font-size: 0.875rem; margin-bottom: 12px;
+      transition: border-color 0.15s;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+    textarea { resize: vertical; }
+    select option { background: var(--card); }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 6px; border: none;
+      cursor: pointer; font-size: 0.875rem; font-weight: 500;
+      font-family: inherit; transition: all 0.15s; text-decoration: none;
+    }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-h); }
+    .btn-success { background: var(--green); color: #000; font-weight: 600; }
+    .btn-success:hover { filter: brightness(1.1); }
+    .btn-danger { background: transparent; color: var(--red); border: 1px solid var(--red); }
+    .btn-danger:hover { background: var(--red); color: #fff; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+    .btn-sm { padding: 4px 10px; font-size: 0.78rem; }
+
+    /* ID badge */
+    .id-box {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; padding: 6px 10px;
+      font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.72rem;
+      color: var(--green); word-break: break-all; margin-top: 8px; display: none;
+    }
+    .id-box.show { display: block; }
+
+    /* Suggestions */
+    .sugg-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px;
+      display: grid; grid-template-columns: 36px 1fr auto;
+      gap: 12px; align-items: start; margin-bottom: 10px;
+      transition: border-color 0.15s;
+    }
+    .sugg-card:hover { border-color: var(--accent); }
+    .sugg-card.selected { border-color: var(--green); background: rgba(35,209,96,0.04); }
+    .rank-badge {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--accent); display: flex; align-items: center;
+      justify-content: center; font-weight: 700; font-size: 1rem; flex-shrink: 0;
+    }
+    .sugg-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+    .tag {
+      padding: 2px 8px; border-radius: 10px; font-size: 0.68rem; font-weight: 600;
+      background: rgba(88,101,242,0.2); color: var(--accent);
+    }
+    .tag.tone { background: rgba(255,221,87,0.15); color: var(--yellow); }
+    .tag.sig { background: rgba(35,209,96,0.15); color: var(--green); }
+    .tag.gen { background: rgba(255,255,255,0.05); color: var(--muted); }
+    .preview { font-size: 0.875rem; line-height: 1.55; margin-bottom: 6px; }
+    .fulltext { font-size: 0.8rem; color: var(--muted); line-height: 1.55; display: none; margin-top: 6px; border-top: 1px solid var(--border); padding-top: 8px; }
+    .fulltext.show { display: block; }
+    .sugg-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+
+    /* Poll bar */
+    .poll-bar { display: none; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--muted); margin-bottom: 14px; }
+    .poll-bar.active { display: flex; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.15); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+    /* Empty state */
+    .empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 0.875rem; }
+
+    /* Log */
+    .log { background: #080b12; border: 1px solid var(--border); border-radius: 8px; padding: 12px; height: 190px; overflow-y: auto; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.72rem; }
+    .le { line-height: 1.45; margin-bottom: 3px; }
+    .le.info { color: var(--muted); }
+    .le.ok { color: var(--green); }
+    .le.err { color: var(--red); }
+    .le.warn { color: var(--yellow); }
+    .ts { color: #3a4560; margin-right: 8px; }
+
+    /* Util */
+    .flex { display: flex; gap: 8px; align-items: center; }
+    .flex-end { display: flex; justify-content: flex-end; gap: 8px; }
+    .mb-12 { margin-bottom: 12px; }
+    .mt-8 { margin-top: 8px; }
+    .mt-16 { margin-top: 16px; }
+    .mono { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.72rem; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <h1>Sales Agent</h1>
+    <span class="badge">P1 Test Console</span>
+    <div class="status">
+      <span class="dot" id="api-dot"></span>
+      <span id="api-label">checking…</span>
+    </div>
+  </header>
+
+  <!-- Token -->
+  <div class="card">
+    <div class="card-title">🔑 JWT Auth Token</div>
+    <label>Paste your token (generate with command below)</label>
+    <textarea id="tok" style="min-height:58px;font-family:'Cascadia Code','Fira Code',monospace;font-size:0.72rem" placeholder="eyJhbGciOiJSUzI1NiIs..."></textarea>
+    <div class="flex" style="flex-wrap:wrap;gap:10px">
+      <button class="btn btn-primary" onclick="saveToken()">Save Token</button>
+      <code class="mono" style="color:var(--muted);flex:1;min-width:200px">
+        # Run in backend terminal:<br>
+        python -c "from src.core.security import create_access_token, Role; print(create_access_token('test-agent', Role.SALESPERSON))"
+      </code>
+    </div>
+  </div>
+
+  <!-- Steps 1 & 2 -->
+  <div class="grid2">
+
+    <!-- Step 1: Lead -->
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title"><span class="step">1</span> Create Lead</div>
+      <label>Customer Name</label>
+      <input id="l-name" value="Test Customer" placeholder="e.g. John's Food App">
+      <label>Requirement Summary</label>
+      <textarea id="l-req" style="min-height:72px">I need a food delivery mobile app for iOS and Android with real-time tracking and payment integration.</textarea>
+      <label>Source</label>
+      <select id="l-src">
+        <option value="manual">manual</option>
+        <option value="fiverr">fiverr</option>
+      </select>
+      <label>Budget USD (optional)</label>
+      <input id="l-budget" type="number" placeholder="e.g. 5000">
+      <button class="btn btn-primary" onclick="createLead()">Create Lead →</button>
+      <div class="id-box" id="lead-id-box"></div>
+    </div>
+
+    <!-- Step 2: Conversation -->
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title"><span class="step">2</span> Create Conversation</div>
+      <label>Lead ID (auto-filled from Step 1)</label>
+      <input id="c-lead" placeholder="Will auto-fill after Step 1">
+      <label>Agent ID (UUID — auto-generated)</label>
+      <input id="c-agent" placeholder="UUID">
+      <div style="height:12px"></div>
+      <div style="height:12px"></div>
+      <div style="height:12px"></div>
+      <div style="height:12px"></div>
+      <button class="btn btn-primary" onclick="createConv()">Create Conversation →</button>
+      <div class="id-box" id="conv-id-box"></div>
+    </div>
+  </div>
+
+  <!-- Step 3: Message -->
+  <div class="card">
+    <div class="card-title"><span class="step">3</span> Submit Customer Message &nbsp;<span style="font-weight:400;font-size:0.78rem;color:var(--muted)">(triggers P1 pipeline via Celery)</span></div>
+    <div class="grid3 mb-12">
+      <div>
+        <label>Lead ID</label>
+        <input id="m-lead" placeholder="Auto-fills from Step 1">
+      </div>
+      <div>
+        <label>Conversation ID</label>
+        <input id="m-conv" placeholder="Auto-fills from Step 2">
+      </div>
+      <div>
+        <label>Intent Override (optional)</label>
+        <select id="m-intent">
+          <option value="">— auto-detect —</option>
+          <option value="new_inquiry">new_inquiry</option>
+          <option value="follow_up">follow_up</option>
+          <option value="clarification">clarification</option>
+          <option value="negotiation">negotiation</option>
+          <option value="angry">angry</option>
+          <option value="urgent">urgent</option>
+        </select>
+      </div>
+    </div>
+    <label>Customer Message (paste what the customer sent)</label>
+    <textarea id="m-msg" style="min-height:100px">Hi! I want to build a food delivery app similar to Uber Eats for our local city. We need iOS and Android apps, real-time GPS tracking, payment integration, and a restaurant dashboard. Our budget is around $15,000. Can you help?</textarea>
+    <div class="flex-end mt-8">
+      <button class="btn btn-primary" id="send-btn" onclick="sendMsg()">⚡ Send Message</button>
+    </div>
+    <div class="id-box mt-8" id="task-box"></div>
+  </div>
+
+  <!-- Step 4: Suggestions -->
+  <div class="card">
+    <div class="card-title">
+      <span class="step">4</span> AI Suggestions
+      <span id="sugg-count" style="margin-left:auto;font-size:0.8rem;font-weight:400;color:var(--muted)"></span>
+    </div>
+    <div class="poll-bar" id="poll-bar">
+      <div class="spinner"></div>
+      <span>Polling every 2 s for suggestions…</span>
+      <button class="btn btn-ghost btn-sm" onclick="stopPoll()">Stop</button>
+    </div>
+    <div id="sugg-area">
+      <div class="empty">Send a message above to trigger the P1 pipeline</div>
+    </div>
+    <div class="flex-end mt-16" id="skip-row" style="display:none">
+      <button class="btn btn-danger" onclick="skipAll()">Skip All — manual reply</button>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:10px">
+      📋 Activity Log
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="clearLog()">Clear</button>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+const API = 'http://localhost:8080';
+let token = '';
+let leadId = '';
+let convId = '';
+// Fixed test agent UUID — must match the row seeded in sales_agents table
+let agentId = '11111111-1111-1111-1111-111111111111';
+let pollTimer = null;
+
+// Seed agent ID
+document.getElementById('c-agent').value = agentId;
+
+// ── Health ─────────────────────────────────────────────────────────────────
+async function checkApi() {
+  try {
+    const r = await fetch(`${API}/health`);
+    const ok = r.ok;
+    document.getElementById('api-dot').className = `dot ${ok ? 'on' : 'off'}`;
+    document.getElementById('api-label').textContent = ok ? 'API online' : 'API offline';
+  } catch {
+    document.getElementById('api-dot').className = 'dot off';
+    document.getElementById('api-label').textContent = 'API offline';
+  }
+}
+checkApi(); setInterval(checkApi, 10000);
+
+// ── Logging ────────────────────────────────────────────────────────────────
+function lg(msg, type='info') {
+  const el = document.getElementById('log');
+  const ts = new Date().toTimeString().slice(0,8);
+  const d = document.createElement('div');
+  d.className = `le ${type}`;
+  d.innerHTML = `<span class="ts">${ts}</span>${escHtml(msg)}`;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
+}
+function clearLog() { document.getElementById('log').innerHTML = ''; }
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── API helper ─────────────────────────────────────────────────────────────
+function hdrs() {
+  return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+}
+async function call(method, path, body=null) {
+  const opts = { method, headers: hdrs() };
+  if (body) opts.body = JSON.stringify(body);
+  lg(`→ ${method} ${path}`, 'info');
+  const r = await fetch(`${API}${path}`, opts);
+  let data;
+  try { data = await r.json(); } catch { data = {}; }
+  if (!r.ok) {
+    lg(`✗ ${r.status}: ${JSON.stringify(data).slice(0,200)}`, 'err');
+    throw new Error(JSON.stringify(data));
+  }
+  lg(`✓ ${r.status}: ${JSON.stringify(data).slice(0,160)}`, 'ok');
+  return data;
+}
+
+// ── Token ──────────────────────────────────────────────────────────────────
+function saveToken() {
+  const v = document.getElementById('tok').value.trim();
+  if (!v) { alert('Paste a token first'); return; }
+  token = v;
+  lg('Token saved ✓', 'ok');
+}
+
+// ── Step 1: Lead ───────────────────────────────────────────────────────────
+async function createLead() {
+  if (!token) { alert('Save token first'); return; }
+  const body = {
+    name: document.getElementById('l-name').value,
+    requirement_summary: document.getElementById('l-req').value,
+    source: document.getElementById('l-src').value,
+  };
+  const b = document.getElementById('l-budget').value;
+  if (b) body.budget = parseFloat(b);
+  try {
+    const d = await call('POST', '/api/v1/leads', body);
+    leadId = d.id;
+    showBox('lead-id-box', `Lead ID: ${leadId}`);
+    document.getElementById('c-lead').value = leadId;
+    document.getElementById('m-lead').value = leadId;
+    lg(`Lead created → ${leadId}`, 'ok');
+  } catch(e) { lg(`Lead failed: ${e.message}`, 'err'); }
+}
+
+// ── Step 2: Conversation ───────────────────────────────────────────────────
+async function createConv() {
+  if (!token) { alert('Save token first'); return; }
+  const lid = document.getElementById('c-lead').value || leadId;
+  const aid = document.getElementById('c-agent').value || agentId;
+  if (!lid) { alert('Create a lead first (or paste Lead ID)'); return; }
+  try {
+    const d = await call('POST', '/api/v1/conversations', { lead_id: lid, agent_id: aid });
+    convId = d.id;
+    showBox('conv-id-box', `Conversation ID: ${convId}`);
+    document.getElementById('m-conv').value = convId;
+    lg(`Conversation created → ${convId}`, 'ok');
+  } catch(e) { lg(`Conversation failed: ${e.message}`, 'err'); }
+}
+
+// ── Step 3: Send Message ───────────────────────────────────────────────────
+async function sendMsg() {
+  if (!token) { alert('Save token first'); return; }
+  const lid = document.getElementById('m-lead').value;
+  const cid = document.getElementById('m-conv').value;
+  const msg = document.getElementById('m-msg').value.trim();
+  const intent = document.getElementById('m-intent').value;
+  if (!lid || !cid || !msg) { alert('Lead ID, Conversation ID, and message are required'); return; }
+
+  const body = { lead_id: lid, conversation_id: cid, customer_message: msg };
+  if (intent) body.intent_override = intent;
+
+  try {
+    document.getElementById('send-btn').disabled = true;
+    const d = await call('POST', '/api/v1/input/message', body);
+    showBox('task-box', `task_id: ${d.task_id}  |  message_id: ${d.message_id}`);
+    lg(`Pipeline queued → task ${d.task_id}`, 'ok');
+    document.getElementById('sugg-area').innerHTML = '<div class="empty">⏳ Celery worker processing…</div>';
+    startPoll(lid, cid);
+  } catch(e) {
+    lg(`Send failed: ${e.message}`, 'err');
+  } finally {
+    document.getElementById('send-btn').disabled = false;
+  }
+}
+
+// ── Step 4: Poll ───────────────────────────────────────────────────────────
+function startPoll(lid, cid) {
+  stopPoll();
+  document.getElementById('poll-bar').classList.add('active');
+  let tries = 0;
+  pollTimer = setInterval(async () => {
+    tries++;
+    if (tries > 90) { stopPoll(); lg('Polling timeout (3 min). Check Celery worker.', 'warn'); return; }
+    try {
+      const r = await fetch(`${API}/api/v1/suggestions/${lid}`, { headers: hdrs() });
+      const d = await r.json();
+      if (d.ready && d.suggestions && d.suggestions.length > 0) {
+        stopPoll();
+        renderSuggestions(d.suggestions, lid, cid);
+      }
+    } catch(e) { lg(`Poll error: ${e.message}`, 'warn'); }
+  }, 2000);
+}
+
+function stopPoll() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  document.getElementById('poll-bar').classList.remove('active');
+}
+
+function renderSuggestions(suggestions, lid, cid) {
+  const sorted = [...suggestions].sort((a,b) => a.rank - b.rank);
+  document.getElementById('sugg-count').textContent = `${sorted.length} suggestions`;
+  document.getElementById('sugg-area').innerHTML = sorted.map(s => `
+    <div class="sugg-card" id="card-${s.id}">
+      <div class="rank-badge">${s.rank}</div>
+      <div>
+        <div class="sugg-meta">
+          <span class="tag">${s.strategy}</span>
+          <span class="tag tone">${s.tone}</span>
+          <span class="tag sig">⚡ ${Math.round((s.conversion_signal||0.5)*100)}%</span>
+          <span class="tag gen">${s.generated_by || 'gpt-4.1'}</span>
+          ${s.intent_label ? `<span class="tag gen">${s.intent_label}</span>` : ''}
+        </div>
+        <div class="preview">${escHtml(s.preview_text)}</div>
+        <div class="fulltext" id="ft-${s.id}">${escHtml(s.full_text)}</div>
+        <button class="btn btn-ghost btn-sm mt-8" onclick="toggleFull('${s.id}')">Show full reply ▾</button>
+      </div>
+      <div class="sugg-actions">
+        <button class="btn btn-success btn-sm" onclick="selectSugg('${s.id}')">✓ Use</button>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('skip-row').style.display = 'flex';
+  lg(`${sorted.length} suggestions rendered`, 'ok');
+
+  // Store for skip
+  document.getElementById('skip-row').dataset.cid = cid;
+}
+
+function toggleFull(id) {
+  document.getElementById(`ft-${id}`).classList.toggle('show');
+}
+
+async function selectSugg(id) {
+  try {
+    await call('POST', `/api/v1/suggestions/${id}/select`, {});
+    document.getElementById(`card-${id}`).classList.add('selected');
+    lg(`Suggestion ${id.slice(0,8)}… selected`, 'ok');
+  } catch(e) { lg(`Select failed: ${e.message}`, 'err'); }
+}
+
+async function skipAll() {
+  const cid = document.getElementById('skip-row').dataset.cid || convId;
+  if (!cid) return;
+  try {
+    await call('POST', `/api/v1/suggestions/skip/${cid}`, {});
+    lg('All suggestions skipped — manual reply recorded', 'warn');
+  } catch(e) { lg(`Skip failed: ${e.message}`, 'err'); }
+}
+
+// ── Utils ──────────────────────────────────────────────────────────────────
+function showBox(id, text) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.classList.add('show');
+}
+
+lg('Console ready. Generate token → save → Step 1 → Step 2 → Step 3 → watch suggestions.', 'info');
+</script>
+</body>
+</html>

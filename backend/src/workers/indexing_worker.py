@@ -61,8 +61,16 @@ def index_conversation(self, conversation_id: str) -> None:
             await session.commit()
             log.info("worker.conversation_indexed", conversation_id=conversation_id)
 
+    from src.infrastructure.db.session import engine as _engine  # noqa: PLC0415
+
+    async def _run_and_dispose() -> None:
+        try:
+            await _run()
+        finally:
+            await _engine.dispose()
+
     try:
-        asyncio.run(_run())
+        asyncio.run(_run_and_dispose())
     except Exception as exc:
         log.error("worker.index_failed", error=str(exc))
         raise self.retry(exc=exc, countdown=60)
