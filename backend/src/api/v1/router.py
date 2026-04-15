@@ -12,7 +12,7 @@ Deprecated:       /replies (kept for backwards-compat; use /input + /suggestions
 
 from fastapi import APIRouter
 
-from src.api.v1 import health
+from src.api.v1 import auth, health
 from src.api.v1.conversations import router as conversations_router
 from src.api.v1.input import router as input_router
 from src.api.v1.leads import router as leads_router
@@ -28,6 +28,9 @@ v1_router = APIRouter(prefix="/api/v1")
 
 # ── Health ────────────────────────────────────────────────────────────────────
 v1_router.include_router(health.router)
+
+# ── Auth ──────────────────────────────────────────────────────────────────────
+v1_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 # ── P1: Conversation Engine ───────────────────────────────────────────────────
 v1_router.include_router(input_router)          # POST /input/message

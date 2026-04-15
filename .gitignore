@@ -1,0 +1,30 @@
+# ── Chat context files (local only) ──────────────────────────────────────────
+bashar_chat_p*.md
+
+# ── Frontend ──────────────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/next-env.d.ts
+
+# ── Backend — Python ──────────────────────────────────────────────────────────
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+backend/.env
+backend/certs/
+backend/*.egg-info/
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/.ruff_cache/
+backend/htmlcov/
+backend/.coverage
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+*.log
+*.pid
+kong.txt
+.DS_Store
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
